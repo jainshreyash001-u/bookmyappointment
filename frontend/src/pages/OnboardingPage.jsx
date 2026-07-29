@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, ShieldCheck, MessageSquare, CheckCircle2, ArrowRight, Bot } from 'lucide-react';
@@ -8,11 +8,152 @@ const OnboardingPage = () => {
   const [step, setStep] = useState(1);
   const [googleConnected, setGoogleConnected] = useState(false);
   const [whatsappTested, setWhatsappTested] = useState(false);
+  const [operatingHours, setOperatingHours] = useState('Mon-Sat: 10AM - 8PM, Sun: Closed');
+  const [cancellationPolicy, setCancellationPolicy] = useState('Requires 24h notice');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      navigate('/login');
+    }
+  }, [navigate]);
+
+  const handleConnectCalendar = async () => {
+    setErrorMsg('');
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const res = await fetch(`${API_BASE}/api/dentist/calendar-url`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.authUrl) {
+        const width = 600, height = 600;
+        const left = window.screenX + (window.innerWidth - width) / 2;
+        const top = window.screenY + (window.innerHeight - height) / 2;
+        const popup = window.open(data.authUrl, 'Google Calendar OAuth', `width=${width},height=${height},left=${left},top=${top}`);
+
+        // Poll dentist profile to check if calendarConnected becomes true
+        const interval = setInterval(async () => {
+          try {
+            const profileRes = await fetch(`${API_BASE}/api/dentist/profile`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            const profileData = await profileRes.json();
+            if (profileData.calendarConnected) {
+              setGoogleConnected(true);
+              clearInterval(interval);
+              setLoading(false);
+            }
+          } catch (e) {
+            console.error('Error polling calendar status:', e);
+          }
+        }, 2000);
+
+        // Auto-clear interval if popup is closed manually
+        const checkClosed = setInterval(() => {
+          if (popup && popup.closed && !googleConnected) {
+            clearInterval(interval);
+            clearInterval(checkClosed);
+            setLoading(false);
+          }
+        }, 1000);
+      } else {
+        setErrorMsg(data.error || 'Failed to fetch calendar OAuth URL');
+        setLoading(false);
+      }
+    } catch (err) {
+      setErrorMsg('Could not fetch calendar URL');
+      setLoading(false);
+    }
+  };
+
+  const handleSavePolicies = async () => {
+    setErrorMsg('');
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      
+      // Save working hours to Airtable
+      const resProfile = await fetch(`${API_BASE}/api/dentist/profile`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          workingHours: { hours: operatingHours }
+        })
+      });
+      const dataProfile = await resProfile.json();
+      if (!dataProfile.success) {
+        throw new Error(dataProfile.error || 'Failed to save working hours');
+      }
+
+      // Save Cancellation Policy to Pinecone
+      const resKnowledge = await fetch(`${API_BASE}/api/dentist/knowledge`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          entries: [
+            {
+              title: 'Cancellation Policy',
+              description: cancellationPolicy,
+              type: 'policy'
+            }
+          ]
+        })
+      });
+      const dataKnowledge = await resKnowledge.json();
+      if (!dataKnowledge.success) {
+        throw new Error(dataKnowledge.error || 'Failed to save cancellation policy');
+      }
+
+      setStep(3);
+    } catch (err) {
+      setErrorMsg(err.message || 'Could not save clinic settings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendTestMessage = async () => {
+    setErrorMsg('');
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      
+      const res = await fetch(`${API_BASE}/api/dentist/test-whatsapp`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setWhatsappTested(true);
+      } else {
+        setErrorMsg(data.error || 'Failed to send test message');
+      }
+    } catch (err) {
+      setErrorMsg('Could not trigger test WhatsApp message');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleNext = () => {
-    if (step < 3) {
-      setStep(step + 1);
-    } else {
+    if (step === 1) {
+      setStep(2);
+    } else if (step === 2) {
+      handleSavePolicies();
+    } else if (step === 3) {
       navigate('/dashboard');
     }
   };
@@ -39,6 +180,12 @@ const OnboardingPage = () => {
         </div>
 
         <div className="clinical-card p-10 relative overflow-hidden min-h-[400px] flex flex-col">
+          {errorMsg && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-xs font-bold text-center">
+              {errorMsg}
+            </div>
+          )}
+
           {/* Progress Bar */}
           <div className="flex items-center justify-between mb-12 relative">
             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-100 rounded-full z-0" />
@@ -67,10 +214,11 @@ const OnboardingPage = () => {
                   The AI needs read/write access to your clinic's calendar to automatically block slots and check availability.
                 </p>
                 <button 
-                  onClick={() => setGoogleConnected(true)}
-                  className={`px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border flex items-center gap-3 mx-auto ${googleConnected ? 'bg-[#10b981]/10 border-[#10b981] text-[#10b981]' : 'bg-white border-gray-200 text-[#0a2540] hover:border-[#10b981] hover:bg-gray-50'}`}
+                  onClick={handleConnectCalendar}
+                  disabled={loading}
+                  className={`px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border flex items-center gap-3 mx-auto disabled:opacity-50 ${googleConnected ? 'bg-[#10b981]/10 border-[#10b981] text-[#10b981]' : 'bg-white border-gray-200 text-[#0a2540] hover:border-[#10b981] hover:bg-gray-50'}`}
                 >
-                  {googleConnected ? <><CheckCircle2 className="w-5 h-5" /> SYNCED SUCCESSFULLY</> : 'CONNECT CALENDAR WITH OAUTH'}
+                  {googleConnected ? <><CheckCircle2 className="w-5 h-5" /> SYNCED SUCCESSFULLY</> : (loading ? 'CONNECTING...' : 'CONNECT CALENDAR WITH OAUTH')}
                 </button>
               </motion.div>
             )}
@@ -86,11 +234,23 @@ const OnboardingPage = () => {
                 <div className="space-y-4 max-w-md mx-auto">
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80 ml-1">Daily Operating Hours</label>
-                    <input type="text" placeholder="e.g. Mon-Sat: 10AM - 8PM, Sun: Closed" className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-3 px-4 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none mt-1 text-[#0a2540]" />
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Mon-Sat: 10AM - 8PM, Sun: Closed" 
+                      className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-3 px-4 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none mt-1 text-[#0a2540]" 
+                      value={operatingHours}
+                      onChange={(e) => setOperatingHours(e.target.value)}
+                    />
                   </div>
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80 ml-1">Cancellation Policy</label>
-                    <input type="text" placeholder="e.g. Requires 24h notice" className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-3 px-4 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none mt-1 text-[#0a2540]" />
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Requires 24h notice" 
+                      className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-3 px-4 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none mt-1 text-[#0a2540]" 
+                      value={cancellationPolicy}
+                      onChange={(e) => setCancellationPolicy(e.target.value)}
+                    />
                   </div>
                 </div>
               </motion.div>
@@ -105,10 +265,11 @@ const OnboardingPage = () => {
                   Send a test message to your configured number to verify the AI assistant is active and responding.
                 </p>
                 <button 
-                  onClick={() => setWhatsappTested(true)}
-                  className={`px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border flex items-center gap-3 mx-auto ${whatsappTested ? 'bg-[#10b981]/10 border-[#10b981] text-[#10b981]' : 'bg-white border-gray-200 text-[#0a2540] hover:border-[#10b981] hover:bg-gray-50'}`}
+                  onClick={handleSendTestMessage}
+                  disabled={loading}
+                  className={`px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border flex items-center gap-3 mx-auto disabled:opacity-50 ${whatsappTested ? 'bg-[#10b981]/10 border-[#10b981] text-[#10b981]' : 'bg-white border-gray-200 text-[#0a2540] hover:border-[#10b981] hover:bg-gray-50'}`}
                 >
-                  {whatsappTested ? <><CheckCircle2 className="w-5 h-5" /> AI IS RESPONDING</> : 'SEND TEST MESSAGE'}
+                  {whatsappTested ? <><CheckCircle2 className="w-5 h-5" /> AI IS RESPONDING</> : (loading ? 'SENDING TEST...' : 'SEND TEST MESSAGE')}
                 </button>
               </motion.div>
             )}
@@ -118,7 +279,8 @@ const OnboardingPage = () => {
             {step > 1 ? (
               <button 
                 onClick={() => setStep(step - 1)}
-                className="text-gray-400 text-xs font-black uppercase tracking-widest hover:text-[#0a2540] transition-colors"
+                disabled={loading}
+                className="text-gray-400 text-xs font-black uppercase tracking-widest hover:text-[#0a2540] transition-colors disabled:opacity-50"
               >
                 Back
               </button>
@@ -126,10 +288,10 @@ const OnboardingPage = () => {
             
             <button 
               onClick={handleNext}
-              disabled={(step === 1 && !googleConnected) || (step === 3 && !whatsappTested)}
+              disabled={loading || (step === 1 && !googleConnected) || (step === 3 && !whatsappTested)}
               className="clinical-btn-primary px-8 py-4 text-xs tracking-widest uppercase flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {step === 3 ? 'FINISH SETUP' : 'CONTINUE'}
+              {loading ? 'SAVING...' : (step === 3 ? 'FINISH SETUP' : 'CONTINUE')}
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

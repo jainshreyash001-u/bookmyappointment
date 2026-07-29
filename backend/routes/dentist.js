@@ -156,4 +156,31 @@ router.get("/upcoming", auth, async (req, res) => {
     }
 });
 
+// POST /api/dentist/test-whatsapp
+router.post("/test-whatsapp", auth, async (req, res) => {
+    try {
+        const dentist = await getDentistById(req.dentist.dentistId);
+        if (!dentist) return res.status(404).json({ error: "Dentist not found" });
+
+        const phoneNumber = dentist.fields.WhatsAppNumber;
+        if (!phoneNumber) {
+            return res.status(400).json({ error: "WhatsApp number not configured in profile" });
+        }
+
+        const { sendWhatsAppMessage } = require("../services/whatsapp");
+        const result = await sendWhatsAppMessage(
+            phoneNumber,
+            `🦷 Hello! This is a test message from your BookMyAppointment AI assistant. Your integration is successfully initialized!`
+        );
+
+        if (result.success) {
+            res.json({ success: true, message: "Test message sent successfully" });
+        } else {
+            res.status(500).json({ error: result.error || "Failed to send WhatsApp message" });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
