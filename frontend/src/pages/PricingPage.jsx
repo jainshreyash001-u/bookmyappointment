@@ -11,7 +11,7 @@ const PricingPage = () => {
       desc: 'Perfect for solo practitioners starting their AI journey.',
       color: 'blue',
       features: [
-        'WhatsApp AI Assistant',
+        'WhatsApp Voice & Text AI Integration',
         'Google Calendar Integration',
         '100+ Conversations / Month',
         '24/7 Priority Email Support',
