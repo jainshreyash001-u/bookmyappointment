@@ -18,9 +18,8 @@ const OnboardingPage = () => {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center px-6 overflow-hidden bg-[#020617] py-20">
+    <div className="min-h-screen relative flex items-center justify-center px-6 overflow-hidden bg-white py-20 text-[#0a2540]">
       <div className="mesh-gradient" />
-      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full animate-pulse" />
       
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
@@ -29,29 +28,29 @@ const OnboardingPage = () => {
       >
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-3 group mb-8">
-            <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(37,99,235,0.4)]">
+            <div className="w-12 h-12 bg-[#0a2540] rounded-2xl flex items-center justify-center shadow-md">
               <Bot className="w-7 h-7 text-white" />
             </div>
           </div>
-          <h1 className="text-4xl font-black tracking-tight uppercase">SYSTEM <span className="text-gradient">ONBOARDING</span></h1>
-          <p className="text-gray-400 font-medium mt-2">Configure your autonomous practice.</p>
+          <h1 className="text-4xl font-black tracking-tight uppercase text-[#0a2540]">
+            SYSTEM <span className="text-gradient-clinical">ONBOARDING</span>
+          </h1>
+          <p className="text-gray-500 font-medium mt-2">Configure your autonomous practice.</p>
         </div>
 
-        <div className="cyber-card p-10 relative overflow-hidden min-h-[400px] flex flex-col">
-          <div className="scanline" />
-          
+        <div className="clinical-card p-10 relative overflow-hidden min-h-[400px] flex flex-col">
           {/* Progress Bar */}
           <div className="flex items-center justify-between mb-12 relative">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-white/5 rounded-full z-0" />
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-100 rounded-full z-0" />
             <div 
-              className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-blue-500 rounded-full z-0 transition-all duration-500" 
+              className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-[#10b981] rounded-full z-0 transition-all duration-500" 
               style={{ width: `${((step - 1) / 2) * 100}%` }}
             />
             
             {[1, 2, 3].map((s) => (
               <div 
                 key={s} 
-                className={`w-10 h-10 rounded-xl relative z-10 flex items-center justify-center text-sm font-black transition-all duration-500 ${step >= s ? 'bg-blue-500 text-white shadow-[0_0_20px_rgba(37,99,235,0.5)]' : 'bg-[#0f172a] text-gray-500 border border-white/5'}`}
+                className={`w-10 h-10 rounded-xl relative z-10 flex items-center justify-center text-sm font-black transition-all duration-500 ${step >= s ? 'bg-[#10b981] text-white shadow-md' : 'bg-gray-50 text-gray-400 border border-gray-200'}`}
               >
                 {step > s ? <CheckCircle2 className="w-5 h-5" /> : s}
               </div>
@@ -62,14 +61,14 @@ const OnboardingPage = () => {
             {/* Step 1: Google Calendar */}
             {step === 1 && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="text-center">
-                <Calendar className="w-16 h-16 text-blue-500 mx-auto mb-6" />
-                <h2 className="text-2xl font-black uppercase tracking-tight mb-4">Sync Google Calendar</h2>
-                <p className="text-gray-400 font-medium mb-8 max-w-md mx-auto">
+                <Calendar className="w-16 h-16 text-[#10b981] mx-auto mb-6" />
+                <h2 className="text-2xl font-black uppercase tracking-tight mb-4 text-[#0a2540]">Sync Google Calendar</h2>
+                <p className="text-gray-500 font-medium mb-8 max-w-md mx-auto">
                   The AI needs read/write access to your clinic's calendar to automatically block slots and check availability.
                 </p>
                 <button 
                   onClick={() => setGoogleConnected(true)}
-                  className={`px-8 py-4 rounded-xl text-sm font-black uppercase tracking-widest transition-all border flex items-center gap-3 mx-auto ${googleConnected ? 'bg-green-500/10 border-green-500 text-green-400' : 'glass border-white/10 text-white hover:border-blue-500 hover:bg-blue-500/10'}`}
+                  className={`px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border flex items-center gap-3 mx-auto ${googleConnected ? 'bg-[#10b981]/10 border-[#10b981] text-[#10b981]' : 'bg-white border-gray-200 text-[#0a2540] hover:border-[#10b981] hover:bg-gray-50'}`}
                 >
                   {googleConnected ? <><CheckCircle2 className="w-5 h-5" /> SYNCED SUCCESSFULLY</> : 'CONNECT CALENDAR WITH OAUTH'}
                 </button>
@@ -79,19 +78,19 @@ const OnboardingPage = () => {
             {/* Step 2: Policies */}
             {step === 2 && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-                <ShieldCheck className="w-16 h-16 text-blue-500 mx-auto mb-6" />
-                <h2 className="text-2xl font-black uppercase tracking-tight mb-4 text-center">Clinic Policies & Hours</h2>
-                <p className="text-gray-400 font-medium mb-8 max-w-md mx-auto text-center">
+                <ShieldCheck className="w-16 h-16 text-[#10b981] mx-auto mb-6" />
+                <h2 className="text-2xl font-black uppercase tracking-tight mb-4 text-center text-[#0a2540]">Clinic Policies & Hours</h2>
+                <p className="text-gray-500 font-medium mb-8 max-w-md mx-auto text-center">
                   Teach your AI the rules of your clinic. You can update these anytime.
                 </p>
                 <div className="space-y-4 max-w-md mx-auto">
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Daily Operating Hours</label>
-                    <input type="text" placeholder="e.g. Mon-Sat: 10AM - 8PM, Sun: Closed" className="w-full bg-white/5 border border-white/5 rounded-xl py-3 px-4 text-sm font-medium focus:border-blue-500/50 outline-none mt-1" />
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80 ml-1">Daily Operating Hours</label>
+                    <input type="text" placeholder="e.g. Mon-Sat: 10AM - 8PM, Sun: Closed" className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-3 px-4 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none mt-1 text-[#0a2540]" />
                   </div>
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Cancellation Policy</label>
-                    <input type="text" placeholder="e.g. Requires 24h notice" className="w-full bg-white/5 border border-white/5 rounded-xl py-3 px-4 text-sm font-medium focus:border-blue-500/50 outline-none mt-1" />
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80 ml-1">Cancellation Policy</label>
+                    <input type="text" placeholder="e.g. Requires 24h notice" className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-3 px-4 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none mt-1 text-[#0a2540]" />
                   </div>
                 </div>
               </motion.div>
@@ -100,14 +99,14 @@ const OnboardingPage = () => {
             {/* Step 3: Test WhatsApp */}
             {step === 3 && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="text-center">
-                <MessageSquare className="w-16 h-16 text-blue-500 mx-auto mb-6" />
-                <h2 className="text-2xl font-black uppercase tracking-tight mb-4">Initialize WhatsApp</h2>
-                <p className="text-gray-400 font-medium mb-8 max-w-md mx-auto">
+                <MessageSquare className="w-16 h-16 text-[#10b981] mx-auto mb-6" />
+                <h2 className="text-2xl font-black uppercase tracking-tight mb-4 text-[#0a2540]">Initialize WhatsApp</h2>
+                <p className="text-gray-500 font-medium mb-8 max-w-md mx-auto">
                   Send a test message to your configured number to verify the AI assistant is active and responding.
                 </p>
                 <button 
                   onClick={() => setWhatsappTested(true)}
-                  className={`px-8 py-4 rounded-xl text-sm font-black uppercase tracking-widest transition-all border flex items-center gap-3 mx-auto ${whatsappTested ? 'bg-green-500/10 border-green-500 text-green-400' : 'glass border-white/10 text-white hover:border-blue-500 hover:bg-blue-500/10'}`}
+                  className={`px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border flex items-center gap-3 mx-auto ${whatsappTested ? 'bg-[#10b981]/10 border-[#10b981] text-[#10b981]' : 'bg-white border-gray-200 text-[#0a2540] hover:border-[#10b981] hover:bg-gray-50'}`}
                 >
                   {whatsappTested ? <><CheckCircle2 className="w-5 h-5" /> AI IS RESPONDING</> : 'SEND TEST MESSAGE'}
                 </button>
@@ -115,11 +114,11 @@ const OnboardingPage = () => {
             )}
           </div>
 
-          <div className="mt-8 pt-8 border-t border-white/5 flex justify-between items-center">
+          <div className="mt-8 pt-8 border-t border-gray-100 flex justify-between items-center">
             {step > 1 ? (
               <button 
                 onClick={() => setStep(step - 1)}
-                className="text-gray-500 text-xs font-black uppercase tracking-widest hover:text-white transition-colors"
+                className="text-gray-400 text-xs font-black uppercase tracking-widest hover:text-[#0a2540] transition-colors"
               >
                 Back
               </button>
@@ -128,7 +127,7 @@ const OnboardingPage = () => {
             <button 
               onClick={handleNext}
               disabled={(step === 1 && !googleConnected) || (step === 3 && !whatsappTested)}
-              className="cyber-button px-8 py-4 text-xs tracking-widest uppercase flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="clinical-btn-primary px-8 py-4 text-xs tracking-widest uppercase flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {step === 3 ? 'FINISH SETUP' : 'CONTINUE'}
               <ArrowRight className="w-4 h-4" />

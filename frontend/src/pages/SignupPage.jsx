@@ -53,6 +53,8 @@ const SignupPage = () => {
                   <input 
                     type="text" required placeholder="Dr. Shreyash Jain"
                     className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-4 pl-12 pr-6 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none transition-all"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
                   />
                 </div>
               </div>
@@ -64,6 +66,8 @@ const SignupPage = () => {
                   <input 
                     type="text" required placeholder="Precision Dental Care"
                     className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-4 pl-12 pr-6 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none transition-all"
+                    value={formData.clinic}
+                    onChange={(e) => setFormData({...formData, clinic: e.target.value})}
                   />
                 </div>
               </div>
@@ -75,6 +79,8 @@ const SignupPage = () => {
                   <input 
                     type="email" required placeholder="shreyash@clinic.com"
                     className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-4 pl-12 pr-6 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none transition-all"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
                   />
                 </div>
               </div>
@@ -86,6 +92,8 @@ const SignupPage = () => {
                   <input 
                     type="tel" required placeholder="+91 9999999999"
                     className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-4 pl-12 pr-6 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none transition-all"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
                   />
                 </div>
               </div>
