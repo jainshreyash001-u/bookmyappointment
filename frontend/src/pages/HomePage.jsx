@@ -47,12 +47,6 @@ const HomePage = () => {
             transition={{ duration: 0.6 }}
             className="z-10"
           >
-            {/* Trust Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#10b981]/10 border border-[#10b981]/20 text-[#0d9668] text-xs font-bold tracking-wider uppercase mb-6">
-              <span className="w-1.5 h-1.5 bg-[#10b981] rounded-full animate-ping" />
-              Trusted by 150+ Dental Practices
-            </div>
-            
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#0a2540] leading-[1.1] mb-6">
               The 24/7 AI Receptionist Built for <span className="text-gradient-accent">Dental Clinics</span>
             </h1>
