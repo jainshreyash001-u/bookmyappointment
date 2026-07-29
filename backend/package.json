@@ -1,0 +1,42 @@
+{
+    "name": "bookmyappointment-backend",
+    "version": "1.0.0",
+    "description": "AI Dental Appointment Booking Backend",
+    "main": "server.js",
+    "scripts": {
+        "dev": "nodemon server.js",
+        "start": "node server.js",
+        "cron-schedule": "node schedule-notification-cron.js",
+        "cron-calls": "node call-followup-checker.js"
+    },
+    "keywords": [
+        "dental",
+        "appointments",
+        "ai"
+    ],
+    "author": "Your Name",
+    "license": "MIT",
+    "dependencies": {
+        "@pinecone-database/pinecone": "^1.0.0",
+        "airtable": "^0.12.2",
+        "axios": "^1.4.0",
+        "bcryptjs": "^3.0.3",
+        "cors": "^2.8.5",
+        "dotenv": "^16.0.3",
+        "express": "^4.18.2",
+        "express-rate-limit": "^6.7.0",
+        "googleapis": "^118.0.0",
+        "groq-sdk": "^0.3.0",
+        "helmet": "^7.0.0",
+        "jsonwebtoken": "^9.0.0",
+        "multer": "^1.4.5-lts.1",
+        "qrcode": "^1.5.4",
+        "razorpay": "^2.9.6",
+        "speakeasy": "^2.0.0",
+        "twilio": "^5.0.4",
+        "uuid": "^9.0.0"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.14"
+    }
+}
