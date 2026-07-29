@@ -2,123 +2,129 @@
 
 @theme {
   --font-sans: 'Space Grotesk', sans-serif;
-  --color-primary: #3b82f6;
-  --color-accent: #22d3ee;
+  --color-primary: #0a2540;
+  --color-accent: #10b981;
+  --color-dental: #3b82f6;
 }
 
 html {
   scroll-behavior: smooth;
 }
 
-:root {
-  --bg-deep: #020617;
-}
-
 body {
-  background-color: var(--bg-deep);
-  color: white;
+  background-color: #ffffff;
+  color: #0a2540;
   overflow-x: hidden;
   font-family: var(--font-sans);
 }
 
-/* Mesh Background */
+/* Light Mesh Clinical Background */
 .mesh-gradient {
   background: 
-    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(34, 211, 238, 0.1) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(99, 102, 241, 0.1) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.04) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.05) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(10, 37, 64, 0.02) 0px, transparent 50%);
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
 }
 
-.glass {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+/* Clinical Cards */
+.clinical-card {
+  background: #ffffff;
+  border: 1px solid rgba(10, 37, 64, 0.08);
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.glass-dark {
-  background: rgba(2, 6, 23, 0.8);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+.clinical-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 12px 20px -8px rgba(10, 37, 64, 0.08);
 }
 
-.text-gradient {
-  background: linear-gradient(to right, #60a5fa, #22d3ee, #818cf8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-size: 200% auto;
-}
-
-.cyber-button {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  color: white;
-  font-weight: 800;
-  border-radius: 1.25rem;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 10px 20px -10px rgba(37, 99, 235, 0.5);
+/* Clinical Buttons */
+.clinical-btn-primary {
+  background-color: #0a2540;
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  transition: all 0.2s ease-in-out;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem 2.5rem;
+  border: 1px solid transparent;
 }
 
-.cyber-button:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 20px 30px -10px rgba(37, 99, 235, 0.6);
+.clinical-btn-primary:hover {
+  background-color: #11365c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(10, 37, 64, 0.15);
 }
 
-.cyber-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 3rem;
-  transition: all 0.5s ease;
+.clinical-btn-accent {
+  background-color: #10b981;
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
 }
 
-.cyber-card:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(59, 130, 246, 0.3);
-  transform: translateY(-5px);
+.clinical-btn-accent:hover {
+  background-color: #0d9668;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
 
-.scanline {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(to right, transparent, rgba(59, 130, 246, 0.5), transparent);
-  animation: scan 4s linear infinite;
-  pointer-events: none;
+.clinical-btn-secondary {
+  background-color: #ffffff;
+  color: #0a2540;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(10, 37, 64, 0.15);
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-@keyframes scan {
-  from { top: 0; }
-  to { top: 100%; }
+.clinical-btn-secondary:hover {
+  background-color: #f8fafc;
+  border-color: #0a2540;
+  transform: translateY(-1px);
 }
 
-/* Custom Scrollbar */
+/* Text Gradients */
+.text-gradient-clinical {
+  background: linear-gradient(135deg, #0a2540 30%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-accent {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Custom Professional Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #020617;
+  background: #f8fafc;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(10, 37, 64, 0.15);
   border-radius: 10px;
+  border: 2px solid #f8fafc;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(59, 130, 246, 0.3);
-}
-
-.animate-float-slow {
-  animation: float-slow 6s ease-in-out infinite;
-}
-
-@keyframes float-slow {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
+  background: rgba(10, 37, 64, 0.3);
 }

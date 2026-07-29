@@ -1,235 +1,324 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Star, CheckCircle2, Zap, XCircle, TrendingUp, ShieldCheck, Users, Activity, Globe, Bot } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Zap, XCircle, TrendingUp, Users, Activity, Globe, Bot, Calendar, ArrowUpRight, MessageSquare, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const HomePage = () => {
-  const fadeIn = {
-    initial: { opacity: 0, y: 20 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true },
-    transition: { duration: 0.6 }
-  };
+  // ROI Calculator State
+  const [missedCalls, setMissedCalls] = useState(25);
+  const [avgTicket, setAvgTicket] = useState(1500);
+
+  // Calculations
+  const conversionRate = 0.65; // 65% booking success rate
+  const weeklyRecovered = Math.round(missedCalls * avgTicket * conversionRate);
+  const monthlyRecovered = Math.round(weeklyRecovered * 4.3);
+  const hoursSaved = Math.round(missedCalls * 0.25 * 4.3); // 15 mins saved per call/reminder
+
+  // FAQ Accordion State
+  const [activeFaq, setActiveFaq] = useState(null);
+
+  const faqs = [
+    {
+      q: "Does it integrate with my existing clinic system?",
+      a: "Yes! BookMyAppointment syncs directly with Google Calendar and Airtable with a 1-click authorization. There is no complicated software integration or technical background required."
+    },
+    {
+      q: "How does the 6-Hour automatic slot release rule work?",
+      a: "If a patient books an appointment, the AI receptionist sends a confirmation request on WhatsApp 24 hours prior. If there is no reply, the AI calls the patient twice. If they remain unconfirmed 6 hours before the appointment, the slot is automatically freed and offered to patients on the waitlist."
+    },
+    {
+      q: "Can the AI handle senior patients who use voice notes?",
+      a: "Absolutely. Our agent runs on Whisper v3. Patients can send voice notes in their regional dialect, and the AI will transcribe, understand, and reply back instantly with text."
+    },
+    {
+      q: "Which languages are supported?",
+      a: "We support 12+ major Indian languages, including Hindi, English, Marathi, Telugu, Tamil, Bengali, Kannada, Malayalam, Gujarati, Punjabi, Odia, and Assamese."
+    }
+  ];
 
   return (
-    <div className="relative">
+    <div className="relative pb-24">
       {/* Hero Section */}
-      <section className="relative min-h-[85vh] lg:min-h-[90vh] flex items-center pt-24 pb-20 lg:pt-28 lg:pb-24 px-6 overflow-hidden">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-32 items-center">
+      <section className="relative pt-12 pb-20 lg:pt-16 lg:pb-24 px-6 overflow-hidden">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           <motion.div 
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="z-10 max-w-2xl"
+            transition={{ duration: 0.6 }}
+            className="z-10"
           >
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="inline-flex items-center gap-3 px-5 py-2 rounded-full glass border-blue-500/20 text-blue-400 text-[10px] font-black tracking-[0.2em] uppercase mb-6 lg:mb-8"
-            >
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(37,99,235,1)]" />
-              Autonomous Clinical Intelligence
-            </motion.div>
+            {/* Trust Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#10b981]/10 border border-[#10b981]/20 text-[#0d9668] text-xs font-bold tracking-wider uppercase mb-6">
+              <span className="w-1.5 h-1.5 bg-[#10b981] rounded-full animate-ping" />
+              Trusted by 150+ Dental Practices
+            </div>
             
-            <h1 className="text-5xl lg:text-7xl font-black leading-[0.9] mb-6 lg:mb-8 tracking-tightest">
-              PRECISION <br />
-              <span className="text-gradient">COORDINATION.</span>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#0a2540] leading-[1.1] mb-6">
+              The 24/7 AI Receptionist Built for <span className="text-gradient-accent">Dental Clinics</span>
             </h1>
             
-            <p className="text-lg text-gray-400 mb-8 lg:mb-10 max-w-lg leading-relaxed font-medium">
-              Transform your practice with the world's most advanced <span className="text-white">AI Dental Assistant</span>. 
-              Automate bookings, eliminate no-shows, and deliver a premium patient experience.
+            <p className="text-lg text-gray-600 mb-8 max-w-lg leading-relaxed font-medium">
+              Never miss a patient call. Automate bookings, confirm appointments, and automatically recycle empty slots on WhatsApp and voice—fully integrated with your calendar.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-6">
-              <Link to="/signup" className="cyber-button group flex items-center justify-center gap-4 text-sm tracking-widest uppercase">
-                GET STARTED
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link to="/signup" className="clinical-btn-accent px-8 py-4 text-sm tracking-wide uppercase flex items-center justify-center gap-2 group">
+                Start 14-Day Free Trial
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </Link>
-              <Link to="/features" className="px-10 py-4 glass rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-white/10 transition-all border border-white/5 hover:border-blue-500/30 text-sm tracking-widest uppercase">
-                EXPLORE FEATURES
-              </Link>
+              <a href="#roi-calculator" className="clinical-btn-secondary px-8 py-4 text-sm tracking-wide uppercase flex items-center justify-center gap-2">
+                Calculate your ROI
+              </a>
+            </div>
+
+            {/* Quick Stats list */}
+            <div className="mt-12 pt-8 border-t border-gray-100 grid grid-cols-3 gap-6">
+              <div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#0a2540]">0%</div>
+                <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">Missed Bookings</div>
+              </div>
+              <div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#0a2540]">₹1.2L+</div>
+                <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">Monthly Recovery</div>
+              </div>
+              <div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#0a2540]">94%</div>
+                <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">Retention Rate</div>
+              </div>
             </div>
           </motion.div>
 
+          {/* Hero Visual Mockup */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.2, ease: "easeOut" }}
-            className="relative flex items-center justify-center w-full max-w-[450px] lg:max-w-full"
+            transition={{ duration: 0.8 }}
+            className="relative flex items-center justify-center w-full"
           >
-            <div className="absolute inset-0 bg-blue-600/5 blur-[120px] rounded-full" />
-            <div className="relative z-10 p-2 glass rounded-[3.5rem] border border-white/5 shadow-2xl overflow-hidden w-full aspect-square lg:aspect-auto">
-              <img 
-                src="/assets/dental_ai_hero.png" 
-                alt="AI Dental Coordinator" 
-                className="w-full h-auto rounded-[3rem] shadow-2xl animate-float-slow object-cover"
-              />
-              <div className="scanline rounded-[3rem]" />
+            <div className="absolute inset-0 bg-[#3b82f6]/5 blur-[80px] rounded-full" />
+            <div className="relative z-10 p-2.5 bg-white rounded-3xl border border-gray-200/80 shadow-2xl overflow-hidden w-full max-w-lg">
+              <div className="bg-[#f8fafc] border border-gray-100 rounded-2xl p-6">
+                {/* Simulated Conversation Feed */}
+                <div className="flex items-center justify-between border-b border-gray-200/60 pb-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-[#0a2540] rounded-xl flex items-center justify-center text-white">
+                      <Bot className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-[#0a2540]">BMA AI Coordinator</h4>
+                      <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Status: Online</span>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 bg-[#10b981]/15 text-[#0d9668] text-[10px] font-black uppercase tracking-wider rounded-md">WhatsApp Active</span>
+                </div>
+
+                <div className="space-y-4 text-xs font-medium">
+                  <div className="bg-white border border-gray-200/60 p-3.5 rounded-2xl max-w-[85%] self-start text-gray-600">
+                    "Hi! I want to reschedule my dental checkup for tomorrow afternoon. Do you have any slots available?"
+                  </div>
+                  <div className="bg-[#0a2540] text-white p-3.5 rounded-2xl max-w-[85%] ml-auto text-right">
+                    "Checking availability... Yes, Dr. Singhal has a slot open at 3:00 PM or 4:30 PM tomorrow. Which one works best for you?"
+                  </div>
+                  <div className="bg-white border border-gray-200/60 p-3.5 rounded-2xl max-w-[85%] self-start text-gray-600">
+                    "4:30 PM is perfect."
+                  </div>
+                  <div className="bg-[#10b981] text-white p-3.5 rounded-2xl max-w-[85%] ml-auto text-right font-bold flex items-center gap-2 justify-end">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    "Confirmed! Google Calendar updated & WhatsApp reminder scheduled."
+                  </div>
+                </div>
+              </div>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Experience Comparison Section */}
-      <section className="py-20 lg:py-24 relative px-6 bg-gradient-to-b from-[#020617] to-transparent">
+      {/* Problem vs Solution Comparison Section */}
+      <section className="py-20 px-6 bg-[#f8fafc] border-y border-gray-100">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16 lg:mb-20">
-            <h2 className="text-4xl lg:text-5xl font-black mb-6 tracking-tighter uppercase">THE <span className="text-gradient">EVOLUTION</span> OF CARE</h2>
-            <p className="text-gray-400 text-lg font-medium max-w-2xl mx-auto">Stop wasting time on legacy booking methods. Move to autonomous practice management.</p>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0a2540] mb-4 tracking-tight">
+              Why Traditional Front-Desks Lose Revenue
+            </h2>
+            <p className="text-gray-500 text-lg max-w-2xl mx-auto font-medium">
+              Human staff get overwhelmed during busy hours. Our AI Receptionist provides instant support.
+            </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-12">
-            <motion.div 
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="p-12 rounded-[3.5rem] border border-white/5 bg-white/[0.01] relative group overflow-hidden"
-            >
-              <h3 className="text-2xl font-bold mb-10 text-gray-500 flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full border border-red-500/30 flex items-center justify-center">
-                  <XCircle className="w-5 h-5 text-red-500/50" />
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* The Clinic Bottleneck */}
+            <div className="bg-white border border-red-100 p-8 rounded-2xl shadow-sm relative group overflow-hidden">
+              <h3 className="text-lg font-bold mb-6 text-red-500 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+                  <XCircle className="w-4 h-4 text-red-500" />
                 </div>
-                LEGACY COORDINATION
+                THE CLINIC BOTTLENECK
               </h3>
-              <ul className="space-y-8">
-                {[
-                  'Manual WhatsApp & Phone juggling',
-                  'Hours wasted on confirmation calls',
-                  'High no-show rates (unconfirmed slots)',
-                  'Limited 10 AM - 6 PM availability'
-                ].map((text, i) => (
-                  <li key={i} className="flex gap-4 text-gray-500 font-medium">
-                    <span className="w-6 h-6 rounded-full bg-red-500/5 flex items-center justify-center shrink-0 mt-1">
-                      <div className="w-1.5 h-1.5 bg-red-500/30 rounded-full" />
-                    </span>
-                    {text}
-                  </li>
-                ))}
+              <ul className="space-y-4 text-sm text-gray-600 font-medium">
+                <li className="flex gap-3">
+                  <span className="w-2 h-2 rounded-full bg-red-400 mt-2 shrink-0" />
+                  Missed calls when your staff is busy or away.
+                </li>
+                <li className="flex gap-3">
+                  <span className="w-2 h-2 rounded-full bg-red-400 mt-2 shrink-0" />
+                  No-shows because manual confirmations are forgotten.
+                </li>
+                <li className="flex gap-3">
+                  <span className="w-2 h-2 rounded-full bg-red-400 mt-2 shrink-0" />
+                  Empty slots are wasted because they are released too late.
+                </li>
+                <li className="flex gap-3">
+                  <span className="w-2 h-2 rounded-full bg-red-400 mt-2 shrink-0" />
+                  Zero patient support after 6:00 PM and on Sundays.
+                </li>
               </ul>
-            </motion.div>
+            </div>
 
-            <motion.div 
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="p-12 rounded-[3.5rem] border border-blue-500/30 bg-blue-600/[0.03] relative shadow-[0_0_50px_rgba(37,99,235,0.05)] overflow-hidden"
-            >
-              <h3 className="text-2xl font-bold mb-10 text-blue-400 flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full border border-blue-500 flex items-center justify-center bg-blue-500/10">
-                  <Zap className="w-5 h-5 fill-current" />
+            {/* The AI Assistant Solution */}
+            <div className="bg-white border border-[#10b981]/30 p-8 rounded-2xl shadow-sm relative group overflow-hidden">
+              <h3 className="text-lg font-bold mb-6 text-[#10b981] flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-[#10b981]/10 flex items-center justify-center">
+                  <Zap className="w-4 h-4 text-[#10b981]" />
                 </div>
-                AUTONOMOUS SYSTEM
+                THE AI RECEPTIONIST
               </h3>
-              <ul className="space-y-8">
-                {[
-                  'Unified WhatsApp Voice & Text AI',
-                  '6-Hour Automated Cancellation Rule',
-                  'Instant WhatsApp Slot Release',
-                  'Dynamic Multi-language Engagement'
-                ].map((text, i) => (
-                  <li key={i} className="flex gap-4 text-gray-200 font-bold">
-                    <CheckCircle2 className="w-6 h-6 text-blue-500 shrink-0 mt-1" />
-                    {text}
-                  </li>
-                ))}
+              <ul className="space-y-4 text-sm text-gray-600 font-medium">
+                <li className="flex gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-[#10b981] shrink-0 mt-0.5" />
+                  Instant answers, booking, and rescheduling on WhatsApp 24/7.
+                </li>
+                <li className="flex gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-[#10b981] shrink-0 mt-0.5" />
+                  Automated notifications and WhatsApp confirmation reminders.
+                </li>
+                <li className="flex gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-[#10b981] shrink-0 mt-0.5" />
+                  Strict 6-hour release rule automatically recycles canceled slots.
+                </li>
+                <li className="flex gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-[#10b981] shrink-0 mt-0.5" />
+                  Real-time synchronization with Google Calendar & Airtable.
+                </li>
               </ul>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section className="py-20 lg:py-24 relative px-6 overflow-hidden">
-        <div className="max-w-7xl mx-auto text-center mb-16">
-          <h2 className="text-4xl lg:text-5xl font-black mb-6 tracking-tighter uppercase">THE ROAD TO <span className="text-gradient">AUTONOMY</span></h2>
-          <p className="text-gray-400 text-lg font-medium max-w-2xl mx-auto">4 steps to transform your clinic into a high-performance clinical engine.</p>
-        </div>
+      {/* Interactive ROI Calculator Section */}
+      <section id="roi-calculator" className="py-20 px-6 scroll-mt-24">
+        <div className="max-w-4xl mx-auto bg-white border border-gray-200/80 rounded-3xl p-8 sm:p-12 shadow-xl">
+          <div className="text-center mb-10">
+            <span className="text-xs font-black tracking-widest text-[#10b981] uppercase block mb-3">ROI Calculator</span>
+            <h2 className="text-3xl font-extrabold text-[#0a2540]">See How Much Revenue You Can Reclaim</h2>
+          </div>
 
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {[
-            { step: '01', title: 'Initialize', desc: 'Connect your Google Calendar and Airtable with one click.', color: 'blue' },
-            { step: '02', title: 'Train', desc: 'Upload your clinic protocols. The AI learns your specific workflow.', color: 'cyan' },
-            { step: '03', title: 'Deploy', desc: 'Your AI Coordinator goes live on WhatsApp and your website.', color: 'indigo' },
-            { step: '04', title: 'Scale', desc: 'Watch your no-shows drop as the AI handles 100% of coordination.', color: 'purple' }
-          ].map((s, i) => (
-            <motion.div 
-              key={i}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="cyber-card p-10 group relative"
-            >
-              <div className="text-6xl font-black text-white/5 absolute top-6 right-6 group-hover:text-blue-500/10 transition-colors">{s.step}</div>
-              <div className={`w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center border border-blue-500/20 mb-8`}>
-                <Bot className={`w-6 h-6 text-blue-400`} />
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            {/* Controls */}
+            <div className="space-y-8 font-medium">
+              <div>
+                <div className="flex justify-between text-sm text-[#0a2540] font-bold mb-3">
+                  <span>Weekly Missed Calls / Leads:</span>
+                  <span className="text-[#10b981]">{missedCalls}</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="5" 
+                  max="100" 
+                  value={missedCalls} 
+                  onChange={(e) => setMissedCalls(Number(e.target.value))}
+                  className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#10b981]"
+                />
               </div>
-              <h3 className="text-2xl font-black mb-4 tracking-tight">{s.title}</h3>
-              <p className="text-gray-400 font-medium leading-relaxed">{s.desc}</p>
-            </motion.div>
-          ))}
+
+              <div>
+                <div className="flex justify-between text-sm text-[#0a2540] font-bold mb-3">
+                  <span>Average Patient Value (₹):</span>
+                  <span className="text-[#10b981]">₹{avgTicket}</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="500" 
+                  max="10000" 
+                  step="100"
+                  value={avgTicket} 
+                  onChange={(e) => setAvgTicket(Number(e.target.value))}
+                  className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#10b981]"
+                />
+              </div>
+            </div>
+
+            {/* Calculations Result */}
+            <div className="bg-[#f8fafc] border border-gray-100 rounded-2xl p-6 space-y-6 text-center">
+              <div>
+                <span className="text-xs text-gray-500 font-bold uppercase tracking-wider block mb-1">Monthly Saved Revenue</span>
+                <div className="text-4xl font-black text-[#10b981]">₹{monthlyRecovered.toLocaleString('en-IN')}</div>
+              </div>
+              <div className="border-t border-gray-200/60 pt-4 grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Hours Saved / Month</span>
+                  <div className="text-lg font-extrabold text-[#0a2540]">{hoursSaved} Hrs</div>
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Weekly Recovered</span>
+                  <div className="text-lg font-extrabold text-[#0a2540]">₹{weeklyRecovered.toLocaleString('en-IN')}</div>
+                </div>
+              </div>
+              <Link to="/signup" className="clinical-btn-primary w-full py-3.5 text-xs tracking-wider uppercase">
+                Claim My Free Trial
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Global Impact Grid */}
-      <section className="py-20 lg:py-24 relative px-6 overflow-hidden">
-        <div className="max-w-7xl mx-auto text-center mb-16 lg:mb-20">
-          <h2 className="text-4xl lg:text-5xl font-black mb-6 tracking-tighter leading-[0.9] uppercase">MEASURING <span className="text-gradient">CLINICAL IMPACT</span></h2>
-          <p className="text-lg text-gray-400 font-medium leading-relaxed max-w-2xl mx-auto">We don\'t just book appointments. We optimize the entire economic engine of your practice.</p>
+      {/* Multi-Language Indian Accents Section */}
+      <section className="py-20 px-6 bg-[#f8fafc] border-y border-gray-100">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-extrabold text-[#0a2540] mb-4">Localized AI for Indian Patient Care</h2>
+            <p className="text-gray-500 text-lg max-w-2xl mx-auto font-medium">
+              India's clinics speak multiple languages. Our AI receptionist understands 12+ regional languages instantly.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            {['Hindi', 'English', 'Marathi', 'Telugu', 'Tamil', 'Bengali', 'Kannada', 'Malayalam', 'Gujarati', 'Punjabi', 'Odia', 'Assamese'].map((lang, idx) => (
+              <div key={idx} className="bg-white border border-gray-200/60 px-5 py-4 rounded-xl flex items-center justify-between hover:border-[#10b981] transition-all">
+                <span className="text-sm font-bold text-[#0a2540]">{lang}</span>
+                <div className="w-2 h-2 bg-[#10b981] rounded-full" />
+              </div>
+            ))}
+          </div>
         </div>
-        
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {[
-            { label: 'Revenue Recovery / Month', value: '₹1.2L+', icon: TrendingUp },
-            { label: 'Patient Retention', value: '94%', icon: Users },
-            { label: 'Admin Time Saved', value: '4.5 hrs/day', icon: Activity },
-            { 
-              label: 'Indian Languages', 
-              value: '12+', 
-              icon: Globe,
-              clickable: true,
-              details: ['Hindi', 'English', 'Marathi', 'Telugu', 'Tamil', 'Bengali', 'Kannada', 'Malayalam', 'Gujarati', 'Punjabi', 'Odia', 'Assamese']
-            }
-          ].map((stat, i) => (
-            <motion.div 
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className={`cyber-card p-12 text-center group relative overflow-hidden ${stat.clickable ? 'cursor-pointer' : ''}`}
-            >
-              {stat.clickable && (
-                <div className="absolute inset-0 bg-blue-500/0 group-hover:bg-blue-500/[0.02] transition-colors flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 p-6 glass backdrop-blur-2xl">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-4">Supported Dialects</div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[10px] font-bold text-gray-300">
-                    {stat.details.map((lang, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <div className="w-1 h-1 bg-blue-500 rounded-full" />
-                        {lang}
-                      </div>
-                    ))}
-                  </div>
+      </section>
+
+      {/* FAQs Section */}
+      <section className="py-20 px-6 max-w-4xl mx-auto">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl font-extrabold text-[#0a2540] mb-4">Frequently Asked Questions</h2>
+          <p className="text-gray-500 text-lg font-medium">Everything you need to know about the receptionist software.</p>
+        </div>
+
+        <div className="space-y-4">
+          {faqs.map((faq, i) => (
+            <div key={i} className="border border-gray-200/80 rounded-2xl bg-white overflow-hidden transition-all">
+              <button 
+                onClick={() => setActiveFaq(activeFaq === i ? null : i)}
+                className="w-full flex items-center justify-between p-6 text-left font-bold text-[#0a2540] hover:text-[#10b981] transition-colors"
+              >
+                <span>{faq.q}</span>
+                <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${activeFaq === i ? 'rotate-180 text-[#10b981]' : 'text-gray-400'}`} />
+              </button>
+              {activeFaq === i && (
+                <div className="px-6 pb-6 text-sm text-gray-500 font-medium leading-relaxed border-t border-gray-50">
+                  {faq.a}
                 </div>
               )}
-              <stat.icon className="w-10 h-10 text-blue-500 mx-auto mb-8 group-hover:scale-110 transition-transform" />
-              <div className="text-5xl font-black mb-4 tracking-tighter text-white">{stat.value}</div>
-              <div className="text-gray-500 font-black uppercase tracking-widest text-[10px]">{stat.label}</div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </section>
-
-      <style>{`
-        @keyframes float-slow {
-          0%, 100% { transform: translateY(0) scale(1); }
-          50% { transform: translateY(-15px) scale(1.02); }
-        }
-        .track-tightest {
-          letter-spacing: -0.05em;
-        }
-      `}</style>
     </div>
   );
 };
