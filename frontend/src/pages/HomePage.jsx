@@ -65,20 +65,12 @@ const HomePage = () => {
               </a>
             </div>
 
-            {/* Quick Stats list */}
-            <div className="mt-12 pt-8 border-t border-gray-100 grid grid-cols-3 gap-6">
-              <div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-[#0a2540]">0%</div>
-                <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">Missed Bookings</div>
-              </div>
-              <div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-[#0a2540]">₹1.2L+</div>
-                <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">Monthly Recovery</div>
-              </div>
-              <div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-[#0a2540]">94%</div>
-                <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">Retention Rate</div>
-              </div>
+            {/* Value Proposition */}
+            <div className="mt-12 pt-8 border-t border-gray-100">
+              <p className="text-base font-bold text-[#0a2540] flex items-center gap-3 leading-relaxed">
+                <span className="flex-shrink-0 w-2.5 h-2.5 rounded-full bg-[#10b981]" />
+                Built to eliminate the #1 revenue leak in clinics: missed calls and slow rebooking.
+              </p>
             </div>
           </motion.div>
 
