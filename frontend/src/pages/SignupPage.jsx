@@ -13,12 +13,43 @@ const SignupPage = () => {
     password: '',
     plan: 'starter'
   });
+  const [errorMsg, setErrorMsg] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    localStorage.setItem('authToken', 'demo-token');
-    localStorage.setItem('userPlan', formData.plan);
-    navigate('/onboarding');
+    setErrorMsg('');
+    setLoading(true);
+
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const res = await fetch(`${API_BASE}/api/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          clinicName: formData.clinic,
+          phoneNumber: formData.phone,
+          password: formData.password,
+          workingHours: {},
+          slackMode: 'none'
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('userPlan', formData.plan);
+        localStorage.setItem('dentistId', data.dentist.dentistId);
+        navigate('/onboarding');
+      } else {
+        setErrorMsg(data.error || 'Registration failed');
+      }
+    } catch (err) {
+      setErrorMsg('Could not connect to authentication server');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -44,6 +75,11 @@ const SignupPage = () => {
         </div>
 
         <div className="clinical-card p-8 sm:p-12 relative overflow-hidden">
+          {errorMsg && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-xs font-bold text-center">
+              {errorMsg}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-2">
@@ -134,8 +170,12 @@ const SignupPage = () => {
             </div>
 
             <div className="pt-4">
-              <button type="submit" className="clinical-btn-primary w-full py-4 text-xs tracking-wider uppercase font-black flex items-center justify-center gap-3">
-                INITIALIZE DEPLOYMENT
+              <button 
+                type="submit" 
+                disabled={loading} 
+                className="clinical-btn-primary w-full py-4 text-xs tracking-wider uppercase font-black flex items-center justify-center gap-3 disabled:opacity-50"
+              >
+                {loading ? 'INITIALIZING...' : 'INITIALIZE DEPLOYMENT'}
                 <ArrowRight className="w-4 h-4" />
               </button>
               <p className="text-[10px] text-center text-gray-400 mt-6 font-bold tracking-widest uppercase">

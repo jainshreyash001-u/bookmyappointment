@@ -6,11 +6,39 @@ import { Bot, Mail, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
 const LoginPage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [errorMsg, setErrorMsg] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    localStorage.setItem('authToken', 'demo-token');
-    window.location.href = '/dashboard';
+    setErrorMsg('');
+    setLoading(true);
+
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('userPlan', data.dentist.plan || 'starter');
+        localStorage.setItem('dentistId', data.dentist.dentistId);
+        window.location.href = '/dashboard';
+      } else {
+        setErrorMsg(data.error || 'Login failed');
+      }
+    } catch (err) {
+      setErrorMsg('Could not connect to authentication server');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -34,6 +62,11 @@ const LoginPage = () => {
         </div>
 
         <div className="clinical-card p-10 relative overflow-hidden">
+          {errorMsg && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-xs font-bold text-center">
+              {errorMsg}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80 ml-1">Email Address</label>
@@ -68,8 +101,12 @@ const LoginPage = () => {
               </div>
             </div>
 
-            <button type="submit" className="clinical-btn-primary w-full py-4 text-xs tracking-wider uppercase font-black flex items-center justify-center gap-3">
-              INITIALIZE SESSION
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="clinical-btn-primary w-full py-4 text-xs tracking-wider uppercase font-black flex items-center justify-center gap-3 disabled:opacity-50"
+            >
+              {loading ? 'INITIALIZING...' : 'INITIALIZE SESSION'}
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
