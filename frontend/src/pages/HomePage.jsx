@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle2, Zap, XCircle, TrendingUp, Users, Activity, Globe, Bot, Calendar, ArrowUpRight, MessageSquare, ChevronDown } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Zap, XCircle, X, TrendingUp, Users, Activity, Globe, Bot, Calendar, ArrowUpRight, MessageSquare, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const HomePage = () => {
@@ -8,6 +8,7 @@ const HomePage = () => {
   const [missedCalls, setMissedCalls] = useState(25);
   const [avgTicket, setAvgTicket] = useState(1500);
   const [minsPerCall, setMinsPerCall] = useState(15);
+  const [showRoiInfo, setShowRoiInfo] = useState(false);
 
   // Calculations
   const conversionRate = 0.65; // 65% booking success rate
@@ -269,10 +270,63 @@ const HomePage = () => {
               <Link to="/signup" className="clinical-btn-primary w-full py-3.5 text-xs tracking-wider uppercase">
                 Claim My Free Trial
               </Link>
+              <button 
+                onClick={() => setShowRoiInfo(true)} 
+                className="text-[10px] text-gray-400 hover:text-[#10b981] font-bold uppercase tracking-wider underline transition-colors mt-2 mx-auto block focus:outline-none"
+              >
+                How it's calculated
+              </button>
             </div>
           </div>
         </div>
       </section>
+
+      {/* ROI Modal */}
+      {showRoiInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white border border-gray-100 rounded-3xl p-8 max-w-md w-full relative shadow-2xl space-y-6 text-[#0a2540]"
+          >
+            {/* Close Button */}
+            <button 
+              onClick={() => setShowRoiInfo(false)} 
+              className="absolute top-6 right-6 text-gray-400 hover:text-[#0a2540] transition-colors focus:outline-none"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div>
+              <span className="text-[10px] font-black tracking-widest text-[#10b981] uppercase block mb-1">Methodology</span>
+              <h3 className="text-xl font-black uppercase tracking-tight">Calculator Formulas</h3>
+            </div>
+
+            <div className="space-y-4 text-sm font-medium text-gray-600">
+              <div className="space-y-1">
+                <h4 className="font-extrabold text-[#0a2540] uppercase text-xs tracking-wider">1. Monthly Saved Revenue</h4>
+                <p className="leading-relaxed">
+                  We multiply your <strong className="text-[#0a2540]">Weekly Missed Calls</strong> by your <strong className="text-[#0a2540]">Average Patient Value</strong>, applying a conservative <strong className="text-[#10b981]">65% booking success rate</strong> for calls captured by the AI, and scale it by <strong className="text-[#0a2540]">4.3 weeks</strong> per month.
+                </p>
+              </div>
+
+              <div className="space-y-1 border-t border-gray-100 pt-4">
+                <h4 className="font-extrabold text-[#0a2540] uppercase text-xs tracking-wider">2. Hours Saved / Month</h4>
+                <p className="leading-relaxed">
+                  We convert your <strong className="text-[#0a2540]">Minutes Spent Per Call</strong> to hours, multiply by the <strong className="text-[#0a2540]">Weekly Missed Calls</strong>, and scale by <strong className="text-[#0a2540]">4.3 weeks</strong> per month.
+                </p>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setShowRoiInfo(false)}
+              className="clinical-btn-primary w-full py-3.5 text-xs tracking-wider uppercase font-bold"
+            >
+              Got it
+            </button>
+          </motion.div>
+        </div>
+      )}
 
       {/* Multi-Language Indian Accents Section */}
       <section className="py-20 px-6 bg-[#f8fafc] border-y border-gray-100">
