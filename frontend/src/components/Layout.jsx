@@ -104,9 +104,6 @@ const Layout = () => {
               <li className="flex items-center gap-3 text-gray-500 font-medium hover:text-[#10b981] transition-colors">
                 <Mail className="w-4 h-4" /> jainshreyash001@gmail.com
               </li>
-              <li className="flex items-center gap-3 text-gray-500 font-medium">
-                <Phone className="w-4 h-4" /> +91 7000016180
-              </li>
             </ul>
           </div>
         </div>

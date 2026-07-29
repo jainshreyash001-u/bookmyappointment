@@ -88,7 +88,7 @@ const SignupPage = () => {
                 <div className="relative">
                   <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                   <input 
-                    type="tel" required placeholder="+91 7000016180"
+                    type="tel" required placeholder="+91 9999999999"
                     className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-sm font-medium focus:border-blue-500/50 focus:bg-blue-500/5 outline-none transition-all"
                   />
                 </div>
