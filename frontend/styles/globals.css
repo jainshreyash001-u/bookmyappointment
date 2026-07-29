@@ -6,6 +6,10 @@
   --color-accent: #22d3ee;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 :root {
   --bg-deep: #020617;
 }

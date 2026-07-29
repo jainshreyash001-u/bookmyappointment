@@ -14,7 +14,7 @@ const HomePage = () => {
   return (
     <div className="relative">
       {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center pt-32 pb-40 px-6 overflow-hidden">
+      <section className="relative min-h-[85vh] lg:min-h-[90vh] flex items-center pt-24 pb-20 lg:pt-28 lg:pb-24 px-6 overflow-hidden">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-32 items-center">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
@@ -25,18 +25,18 @@ const HomePage = () => {
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="inline-flex items-center gap-3 px-5 py-2 rounded-full glass border-blue-500/20 text-blue-400 text-[10px] font-black tracking-[0.2em] uppercase mb-10"
+              className="inline-flex items-center gap-3 px-5 py-2 rounded-full glass border-blue-500/20 text-blue-400 text-[10px] font-black tracking-[0.2em] uppercase mb-6 lg:mb-8"
             >
               <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(37,99,235,1)]" />
               Autonomous Clinical Intelligence
             </motion.div>
             
-            <h1 className="text-7xl lg:text-[5.5rem] font-black leading-[0.85] mb-10 tracking-tightest">
+            <h1 className="text-5xl lg:text-7xl font-black leading-[0.9] mb-6 lg:mb-8 tracking-tightest">
               PRECISION <br />
               <span className="text-gradient">COORDINATION.</span>
             </h1>
             
-            <p className="text-xl text-gray-400 mb-14 max-w-lg leading-relaxed font-medium">
+            <p className="text-lg text-gray-400 mb-8 lg:mb-10 max-w-lg leading-relaxed font-medium">
               Transform your practice with the world's most advanced <span className="text-white">AI Dental Assistant</span>. 
               Automate bookings, eliminate no-shows, and deliver a premium patient experience.
             </p>
@@ -72,11 +72,11 @@ const HomePage = () => {
       </section>
 
       {/* Experience Comparison Section */}
-      <section className="py-40 relative px-6 bg-gradient-to-b from-[#020617] to-transparent">
+      <section className="py-20 lg:py-24 relative px-6 bg-gradient-to-b from-[#020617] to-transparent">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-32">
-            <h2 className="text-5xl lg:text-6xl font-black mb-8 tracking-tighter uppercase">THE <span className="text-gradient">EVOLUTION</span> OF CARE</h2>
-            <p className="text-gray-400 text-xl font-medium max-w-2xl mx-auto">Stop wasting time on legacy booking methods. Move to autonomous practice management.</p>
+          <div className="text-center mb-16 lg:mb-20">
+            <h2 className="text-4xl lg:text-5xl font-black mb-6 tracking-tighter uppercase">THE <span className="text-gradient">EVOLUTION</span> OF CARE</h2>
+            <p className="text-gray-400 text-lg font-medium max-w-2xl mx-auto">Stop wasting time on legacy booking methods. Move to autonomous practice management.</p>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-12">
@@ -140,10 +140,10 @@ const HomePage = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-40 relative px-6 overflow-hidden">
-        <div className="max-w-7xl mx-auto text-center mb-24">
-          <h2 className="text-5xl lg:text-6xl font-black mb-8 tracking-tighter uppercase">THE ROAD TO <span className="text-gradient">AUTONOMY</span></h2>
-          <p className="text-gray-400 text-xl font-medium max-w-2xl mx-auto">4 steps to transform your clinic into a high-performance clinical engine.</p>
+      <section className="py-20 lg:py-24 relative px-6 overflow-hidden">
+        <div className="max-w-7xl mx-auto text-center mb-16">
+          <h2 className="text-4xl lg:text-5xl font-black mb-6 tracking-tighter uppercase">THE ROAD TO <span className="text-gradient">AUTONOMY</span></h2>
+          <p className="text-gray-400 text-lg font-medium max-w-2xl mx-auto">4 steps to transform your clinic into a high-performance clinical engine.</p>
         </div>
 
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -173,10 +173,10 @@ const HomePage = () => {
       </section>
 
       {/* Global Impact Grid */}
-      <section className="py-40 relative px-6 overflow-hidden">
-        <div className="max-w-7xl mx-auto text-center mb-32">
-          <h2 className="text-5xl lg:text-7xl font-black mb-8 tracking-tighter leading-[0.9] uppercase">MEASURING <br /><span className="text-gradient">CLINICAL IMPACT</span></h2>
-          <p className="text-xl text-gray-400 font-medium leading-relaxed max-w-2xl mx-auto">We don't just book appointments. We optimize the entire economic engine of your practice.</p>
+      <section className="py-20 lg:py-24 relative px-6 overflow-hidden">
+        <div className="max-w-7xl mx-auto text-center mb-16 lg:mb-20">
+          <h2 className="text-4xl lg:text-5xl font-black mb-6 tracking-tighter leading-[0.9] uppercase">MEASURING <span className="text-gradient">CLINICAL IMPACT</span></h2>
+          <p className="text-lg text-gray-400 font-medium leading-relaxed max-w-2xl mx-auto">We don\'t just book appointments. We optimize the entire economic engine of your practice.</p>
         </div>
         
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 lg:grid-cols-4 gap-8">

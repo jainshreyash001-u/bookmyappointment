@@ -18,7 +18,7 @@ const Layout = () => {
       <div className="mesh-gradient" />
       
       {/* Sticky Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-[100] px-6 py-6">
+      <nav className="fixed top-0 left-0 right-0 z-[100] px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between glass-dark px-8 py-4 rounded-[2rem] border border-white/5 shadow-2xl">
           <Link to="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(37,99,235,0.3)]">
@@ -51,8 +51,8 @@ const Layout = () => {
       </main>
 
       {/* Professional Footer */}
-      <footer className="relative z-10 pt-32 pb-20 px-6 border-t border-white/5 bg-gradient-to-b from-transparent to-[#020617]">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-20">
+      <footer className="relative z-10 pt-20 pb-12 px-6 border-t border-white/5 bg-gradient-to-b from-transparent to-[#020617]">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           <div className="space-y-8">
             <Link to="/" className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.3)]">
@@ -108,7 +108,7 @@ const Layout = () => {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="max-w-7xl mx-auto pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
           <p className="text-gray-500 text-xs font-bold tracking-widest uppercase">
             © 2026 BOOKMYAPPOINTMENT. ALL RIGHTS RESERVED.
           </p>

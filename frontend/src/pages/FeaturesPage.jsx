@@ -63,14 +63,14 @@ const FeaturesPage = () => {
   ];
 
   return (
-    <div className="pt-40 pb-32 px-6">
+    <div className="pt-28 pb-20 px-6">
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
-        <div className="mb-32 text-center">
+        <div className="mb-16 text-center">
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex justify-center mb-6"
+            className="flex justify-center mb-4"
           >
             <div className="px-4 py-1.5 rounded-full border border-blue-500/20 bg-blue-500/5 text-blue-400 text-xs font-bold tracking-[0.3em] uppercase">
               Technical Features
@@ -79,9 +79,9 @@ const FeaturesPage = () => {
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-6xl lg:text-7xl font-black mb-8 tracking-tighter"
+            className="text-4xl lg:text-5xl font-black mb-6 tracking-tighter"
           >
-            THE <span className="text-gradient">AUTONOMOUS</span> <br /> CORE
+            THE <span className="text-gradient">AUTONOMOUS</span> CORE
           </motion.h1>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto font-medium">
             We've built a multi-layered intelligence system designed to handle every complexity of a modern dental practice.
@@ -141,7 +141,7 @@ const FeaturesPage = () => {
         <motion.div 
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
-          className="mt-32 p-12 rounded-[3rem] border border-white/5 bg-gradient-to-br from-blue-600/10 to-transparent relative overflow-hidden"
+          className="mt-20 p-10 rounded-[2.5rem] border border-white/5 bg-gradient-to-br from-blue-600/10 to-transparent relative overflow-hidden"
         >
           <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
             <div className="max-w-xl">

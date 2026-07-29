@@ -37,13 +37,13 @@ const PricingPage = () => {
   ];
 
   return (
-    <div className="pt-40 pb-32 px-6 overflow-hidden">
+    <div className="pt-28 pb-20 px-6 overflow-hidden">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-32">
+        <div className="text-center mb-16">
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="inline-flex items-center gap-3 px-5 py-2 rounded-full glass border-blue-500/20 text-blue-400 text-[10px] font-black tracking-[0.2em] uppercase mb-10"
+            className="inline-flex items-center gap-3 px-5 py-2 rounded-full glass border-blue-500/20 text-blue-400 text-[10px] font-black tracking-[0.2em] uppercase mb-6"
           >
             <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(37,99,235,1)]" />
             Flexible Deployment Models
@@ -51,7 +51,7 @@ const PricingPage = () => {
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-6xl lg:text-7xl font-black mb-8 tracking-tighter uppercase"
+            className="text-4xl lg:text-5xl font-black mb-6 tracking-tighter uppercase"
           >
             INVEST IN <span className="text-gradient">EFFICIENCY</span>
           </motion.h1>
@@ -106,7 +106,7 @@ const PricingPage = () => {
         </div>
 
         {/* Security Trust Section */}
-        <div className="mt-32 pt-20 border-t border-white/5 grid md:grid-cols-3 gap-12 text-center opacity-60">
+        <div className="mt-20 pt-12 border-t border-white/5 grid md:grid-cols-3 gap-12 text-center opacity-60">
           {[
             { icon: ShieldCheck, title: 'BANK-GRADE SECURITY', desc: 'Secure medical data handling.' },
             { icon: Globe, title: 'MULTI-LANGUAGE', desc: 'Auto-detection in Indian regional languages.' },
