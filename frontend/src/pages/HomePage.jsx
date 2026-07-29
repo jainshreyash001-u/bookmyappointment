@@ -7,12 +7,13 @@ const HomePage = () => {
   // ROI Calculator State
   const [missedCalls, setMissedCalls] = useState(25);
   const [avgTicket, setAvgTicket] = useState(1500);
+  const [minsPerCall, setMinsPerCall] = useState(15);
 
   // Calculations
   const conversionRate = 0.65; // 65% booking success rate
   const weeklyRecovered = Math.round(missedCalls * avgTicket * conversionRate);
   const monthlyRecovered = Math.round(weeklyRecovered * 4.3);
-  const hoursSaved = Math.round(missedCalls * 0.25 * 4.3); // 15 mins saved per call/reminder
+  const hoursSaved = Math.round(missedCalls * (minsPerCall / 60) * 4.3);
 
   // FAQ Accordion State
   const [activeFaq, setActiveFaq] = useState(null);
@@ -229,6 +230,21 @@ const HomePage = () => {
                   step="100"
                   value={avgTicket} 
                   onChange={(e) => setAvgTicket(Number(e.target.value))}
+                  className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#10b981]"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between text-sm text-[#0a2540] font-bold mb-3">
+                  <span>Minutes Spent Per Call / Follow-up:</span>
+                  <span className="text-[#10b981]">{minsPerCall} mins</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="1" 
+                  max="45" 
+                  value={minsPerCall} 
+                  onChange={(e) => setMinsPerCall(Number(e.target.value))}
                   className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#10b981]"
                 />
               </div>
