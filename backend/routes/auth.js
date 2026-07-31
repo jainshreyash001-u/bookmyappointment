@@ -24,9 +24,11 @@ router.post("/signup", async (req, res) => {
         return res.status(400).json({ error: "Email and clinic name are required" });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     try {
         // Check if dentist already exists
-        const existing = await getDentistByEmail(email);
+        const existing = await getDentistByEmail(normalizedEmail);
         if (existing) {
             return res.status(400).json({ error: "Email already registered" });
         }
@@ -38,7 +40,7 @@ router.post("/signup", async (req, res) => {
         const dentist = await createDentist({
             DentistID: dentistId,
             Name: clinicName,
-            Email: email,
+            Email: normalizedEmail,
             WhatsAppNumber: phoneNumber,
             ClinicName: clinicName,
             WorkingHours: JSON.stringify(workingHours || {}),
@@ -91,8 +93,10 @@ router.post("/login", async (req, res) => {
         return res.status(400).json({ error: "Email is required" });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     try {
-        const dentist = await getDentistByEmail(email);
+        const dentist = await getDentistByEmail(normalizedEmail);
         if (!dentist) {
             return res.status(401).json({ error: "Dentist not found" });
         }
