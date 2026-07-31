@@ -46,7 +46,14 @@ router.get("/profile", auth, async (req, res) => {
             workingHours: JSON.parse(dentist.fields.WorkingHours || "{}"),
             subscriptionStatus: dentist.fields.SubscriptionStatus,
             slackConfigured: !!dentist.fields.SlackWebhook,
-            calendarConnected: !!dentist.fields.GoogleCalendarToken,
+            calendarConnected: (() => {
+                try {
+                    const tokens = JSON.parse(dentist.fields.GoogleCalendarToken || "{}");
+                    return !!tokens.access_token;
+                } catch {
+                    return false;
+                }
+            })(),
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -61,15 +68,13 @@ router.patch("/profile", auth, async (req, res) => {
         const dentist = await getDentistById(req.dentist.dentistId);
         if (!dentist) return res.status(404).json({ error: "Dentist not found" });
 
-        await updateDentist(dentist.id, {
-            ClinicName: clinicName || dentist.fields.ClinicName,
-            WorkingHours: workingHours
-                ? JSON.stringify(workingHours)
-                : dentist.fields.WorkingHours,
-            ClinicAddress: clinicAddress || dentist.fields.ClinicAddress,
-        });
+        const fieldsToUpdate = {};
+        if (clinicName !== undefined) fieldsToUpdate.ClinicName = clinicName;
+        if (workingHours !== undefined) fieldsToUpdate.WorkingHours = JSON.stringify(workingHours);
+        if (clinicAddress !== undefined) fieldsToUpdate.ClinicAddress = clinicAddress;
 
-        res.json({ success: true, message: "Profile updated" });
+        const updated = await updateDentist(dentist.id, fieldsToUpdate);
+        res.json({ success: true, dentist: updated });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -190,7 +195,7 @@ router.post("/disconnect-calendar", auth, async (req, res) => {
         if (!dentist) return res.status(404).json({ error: "Dentist not found" });
 
         await updateDentist(dentist.id, {
-            GoogleCalendarToken: "",
+            GoogleCalendarToken: "{}",
             GoogleCalendarId: "",
         });
 

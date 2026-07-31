@@ -124,12 +124,8 @@ const StatusPage = () => {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (res.status === 401 || res.status === 404) {
-        handleLogout();
-        return;
-      }
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         setProfile(prev => ({ ...prev, calendarConnected: false }));
       } else {
         setCalendarError(data.error || 'Failed to disconnect calendar');
