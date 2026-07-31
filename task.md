@@ -13,9 +13,9 @@
   - [x] Verify dentist onboarding/profile save flow works with Supabase.
   - [x] Test client chatbot interaction and database logging.
 
-- [ ] **4. Password Hashing and Security Layer**
-  - [ ] Implement database column mapping (`clinic_address` -> `PasswordHash`) in `backend/services/database.js`
-  - [ ] Update signup route in `backend/routes/auth.js` to hash password using `bcryptjs`
-  - [ ] Update login route in `backend/routes/auth.js` to compare password hash using `bcryptjs`
-  - [ ] Update test script `backend/test_auth_system.js` to send passwords and verify authentication rejections
-  - [ ] Run backend tests locally to verify password security is 100% operational
+- [x] **4. Password Hashing and Security Layer**
+  - [x] Implement database column mapping (`clinic_address` -> `PasswordHash`) in `backend/services/database.js`
+  - [x] Update signup route in `backend/routes/auth.js` to hash password using `bcryptjs`
+  - [x] Update login route in `backend/routes/auth.js` to compare password hash using `bcryptjs`
+  - [x] Update test script `backend/test_auth_system.js` to send passwords and verify authentication rejections
+  - [x] Run backend tests locally to verify password security is 100% operational
