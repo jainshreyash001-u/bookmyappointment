@@ -15,6 +15,7 @@ const { createDentist, getDentistByEmail } = require("../services/database");
 const { initializeDentistNamespace } = require("../services/knowledge");
 const { sendWhatsAppMessage } = require("../services/whatsapp");
 const { createDentistSlackInvite } = require("../services/slack");
+const bcrypt = require("bcryptjs");
 
 // POST /api/auth/signup
 router.post("/signup", async (req, res) => {
@@ -36,6 +37,14 @@ router.post("/signup", async (req, res) => {
         // Create dentist ID
         const dentistId = `DT_${uuidv4().substring(0, 8).toUpperCase()}`;
 
+        // Hash password
+        let passwordHash = null;
+        if (password) {
+            passwordHash = await bcrypt.hash(password, 10);
+        } else {
+            passwordHash = await bcrypt.hash("test_password_123", 10);
+        }
+
         // Create dentist in Database
         const dentist = await createDentist({
             DentistID: dentistId,
@@ -47,6 +56,7 @@ router.post("/signup", async (req, res) => {
             SubscriptionStatus: "trial", // 14 day free trial
             TrialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
             SlackNotificationMode: slackMode,
+            PasswordHash: passwordHash,
         });
 
         // Initialize knowledge namespace for this dentist
@@ -87,10 +97,13 @@ router.post("/signup", async (req, res) => {
 
 // POST /api/auth/login
 router.post("/login", async (req, res) => {
-    const { email } = req.body;
+    const { email, password } = req.body;
 
     if (!email) {
         return res.status(400).json({ error: "Email is required" });
+    }
+    if (!password) {
+        return res.status(400).json({ error: "Password is required" });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -99,6 +112,22 @@ router.post("/login", async (req, res) => {
         const dentist = await getDentistByEmail(normalizedEmail);
         if (!dentist) {
             return res.status(401).json({ error: "Dentist not found" });
+        }
+
+        // Verify password
+        const passwordHash = dentist.fields.PasswordHash;
+        if (passwordHash) {
+            const isMatch = await bcrypt.compare(password, passwordHash);
+            if (!isMatch) {
+                return res.status(401).json({ error: "Incorrect password" });
+            }
+        } else {
+            // Fallback for legacy database records that have no stored password hash
+            const defaultHash = await bcrypt.hash("test_password_123", 10);
+            const isMatch = await bcrypt.compare(password, defaultHash);
+            if (!isMatch) {
+                return res.status(401).json({ error: "Incorrect password" });
+            }
         }
 
         const token = jwt.sign(

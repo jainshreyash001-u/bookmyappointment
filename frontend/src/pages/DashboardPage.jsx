@@ -77,7 +77,7 @@ const DashboardPage = () => {
     { label: 'Synced Appointments', value: loading ? '...' : appointments.length, change: 'Live', icon: Calendar, color: 'blue' },
     { label: 'AI Processed Queries', value: loading ? '...' : '100% Active', change: 'Active', icon: MessageSquare, color: 'teal' },
     { label: 'No-Show Recovery', value: 'Active', change: '6h Rule', icon: Activity, color: 'green' },
-    { label: 'Current Revenue Leak', value: '$0.00', change: 'Optimized', icon: TrendingUp, color: 'indigo' }
+    { label: 'Current Revenue Leak', value: '₹0.00', change: 'Optimized', icon: TrendingUp, color: 'indigo' }
   ];
 
   const getInitials = (name) => {

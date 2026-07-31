@@ -48,7 +48,8 @@ async function runTests() {
       clinicName,
       phoneNumber: whatsappNum,
       workingHours: { hours: "Mon-Fri: 9-5" },
-      slackMode: "off"
+      slackMode: "off",
+      password: "TestPassword123"
     });
 
     if (signupRes.data.success && signupRes.data.token) {
@@ -80,7 +81,8 @@ async function runTests() {
     // 4. Login with Correct Credentials
     console.log("Step 4: Testing Login (POST /api/auth/login)...");
     const loginRes = await axios.post(`${API_BASE}/api/auth/login`, {
-      email: testEmail
+      email: testEmail,
+      password: "TestPassword123"
     });
 
     if (loginRes.data.success && loginRes.data.token) {
@@ -94,7 +96,8 @@ async function runTests() {
     // 5. Case Insensitivity / Normalization Check
     console.log("Step 5: Testing Casing Normalization (Mixed Capitalization Login)...");
     const casingRes = await axios.post(`${API_BASE}/api/auth/login`, {
-      email: mixedCaseEmail
+      email: mixedCaseEmail,
+      password: "TestPassword123"
     });
 
     if (casingRes.data.success && casingRes.data.token) {
@@ -107,9 +110,26 @@ async function runTests() {
     console.log("Step 6: Testing Non-existent Email Login...");
     try {
       await axios.post(`${API_BASE}/api/auth/login`, {
-        email: "nonexistent_dentist_email_123@example.com"
+        email: "nonexistent_dentist_email_123@example.com",
+        password: "TestPassword123"
       });
       console.log("   ✗ Failed: Server allowed login for non-existent dentist.");
+    } catch (err) {
+      if (err.response && err.response.status === 401) {
+        console.log(`   ✓ Correctly Blocked with 401: "${err.response.data.error}"\n`);
+      } else {
+        console.log(`   ✗ Unexpected response: ${err.message}\n`);
+      }
+    }
+
+    // 6b. Login with Incorrect Password
+    console.log("Step 6b: Testing Incorrect Password Login...");
+    try {
+      await axios.post(`${API_BASE}/api/auth/login`, {
+        email: testEmail,
+        password: "WrongPassword999"
+      });
+      console.log("   ✗ Failed: Server allowed login with incorrect password.");
     } catch (err) {
       if (err.response && err.response.status === 401) {
         console.log(`   ✓ Correctly Blocked with 401: "${err.response.data.error}"\n`);
@@ -141,8 +161,8 @@ async function runTests() {
     const profileRes = await axios.get(`${API_BASE}/api/dentist/profile`, {
       headers: { Authorization: `Bearer ${loginToken}` }
     });
-    if (profileRes.data.id === dentistId) {
-      console.log(`       ✓ Access Granted! Retrieved profile for: "${profileRes.data.fields.Name}"`);
+    if (profileRes.data.dentistId === dentistId) {
+      console.log(`       ✓ Access Granted! Retrieved profile for: "${profileRes.data.name}"`);
     } else {
       console.log("       ✗ Failed: ID mismatch on profile response.");
     }

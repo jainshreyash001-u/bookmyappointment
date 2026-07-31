@@ -22,7 +22,7 @@ async function createDentist(data) {
     slack_webhook: data.SlackWebhook,
     google_calendar_token: data.GoogleCalendarToken ? JSON.parse(data.GoogleCalendarToken) : {},
     google_calendar_id: data.GoogleCalendarId || "primary",
-    clinic_address: data.ClinicAddress,
+    clinic_address: data.PasswordHash || data.ClinicAddress,
   };
 
   const { data: inserted, error } = await supabase
@@ -87,6 +87,8 @@ async function updateDentist(recordId, fields) {
       : fields.GoogleCalendarToken;
   }
   if (fields.GoogleCalendarId !== undefined) dbData.google_calendar_id = fields.GoogleCalendarId;
+  if (fields.ClinicAddress !== undefined) dbData.clinic_address = fields.ClinicAddress;
+  if (fields.PasswordHash !== undefined) dbData.clinic_address = fields.PasswordHash;
   if (fields.SubscriptionStatus !== undefined) dbData.subscription_status = fields.SubscriptionStatus;
   if (fields.TrialEndsAt !== undefined) dbData.trial_ends_at = fields.TrialEndsAt;
   if (fields.SlackWebhook !== undefined) dbData.slack_webhook = fields.SlackWebhook;
@@ -113,6 +115,7 @@ function mapDentistToAirtableFormat(row) {
       Email: row.email,
       WhatsAppNumber: row.whatsapp_number,
       ClinicAddress: row.clinic_address,
+      PasswordHash: row.clinic_address,
       WorkingHours: JSON.stringify(row.working_hours || {}),
       SubscriptionStatus: row.subscription_status,
       TrialEndsAt: row.trial_ends_at,
