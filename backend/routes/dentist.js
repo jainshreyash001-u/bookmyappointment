@@ -183,4 +183,21 @@ router.post("/test-whatsapp", auth, async (req, res) => {
     }
 });
 
+// POST /api/dentist/disconnect-calendar
+router.post("/disconnect-calendar", auth, async (req, res) => {
+    try {
+        const dentist = await getDentistById(req.dentist.dentistId);
+        if (!dentist) return res.status(404).json({ error: "Dentist not found" });
+
+        await updateDentist(dentist.id, {
+            GoogleCalendarToken: "",
+            GoogleCalendarId: "",
+        });
+
+        res.json({ success: true, message: "Google Calendar successfully disconnected." });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

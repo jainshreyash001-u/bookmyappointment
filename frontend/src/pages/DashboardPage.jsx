@@ -73,6 +73,100 @@ const DashboardPage = () => {
     navigate('/login');
   };
 
+  // Google Calendar handlers
+  const [calendarLoading, setCalendarLoading] = useState(false);
+  const [calendarError, setCalendarError] = useState('');
+
+  const handleConnectCalendar = async () => {
+    setCalendarError('');
+    setCalendarLoading(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const res = await fetch(`${API_BASE}/api/dentist/calendar-url`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.status === 401 || res.status === 404) {
+        handleLogout();
+        return;
+      }
+      const data = await res.json();
+      if (data.authUrl) {
+        const width = 600, height = 600;
+        const left = window.screenX + (window.innerWidth - width) / 2;
+        const top = window.screenY + (window.innerHeight - height) / 2;
+        const popup = window.open(data.authUrl, 'Google Calendar OAuth', `width=${width},height=${height},left=${left},top=${top}`);
+
+        // Poll dentist profile to check if calendarConnected becomes true
+        const interval = setInterval(async () => {
+          try {
+            const profileRes = await fetch(`${API_BASE}/api/dentist/profile`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            if (profileRes.status === 401 || profileRes.status === 404) {
+              clearInterval(interval);
+              handleLogout();
+              return;
+            }
+            const profileData = await profileRes.json();
+            if (profileData.calendarConnected) {
+              setProfile(prev => ({ ...prev, calendarConnected: true }));
+              clearInterval(interval);
+              setCalendarLoading(false);
+            }
+          } catch (e) {
+            console.error('Error polling calendar status:', e);
+          }
+        }, 2000);
+
+        // Auto-clear interval if popup is closed manually
+        const checkClosed = setInterval(() => {
+          if (popup && popup.closed) {
+            clearInterval(interval);
+            clearInterval(checkClosed);
+            setCalendarLoading(false);
+          }
+        }, 1000);
+      } else {
+        setCalendarError(data.error || 'Failed to fetch calendar OAuth URL');
+        setCalendarLoading(false);
+      }
+    } catch (err) {
+      setCalendarError('Could not fetch calendar URL');
+      setCalendarLoading(false);
+    }
+  };
+
+  const handleDisconnectCalendar = async () => {
+    if (!window.confirm("Are you sure you want to disconnect Google Calendar? This will stop the AI receptionist from reading and writing appointments to your Google Calendar.")) {
+      return;
+    }
+    setCalendarError('');
+    setCalendarLoading(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const res = await fetch(`${API_BASE}/api/dentist/disconnect-calendar`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.status === 401 || res.status === 404) {
+        handleLogout();
+        return;
+      }
+      const data = await res.json();
+      if (res.ok) {
+        setProfile(prev => ({ ...prev, calendarConnected: false }));
+      } else {
+        setCalendarError(data.error || 'Failed to disconnect calendar');
+      }
+    } catch (err) {
+      setCalendarError('Could not connect to server');
+    } finally {
+      setCalendarLoading(false);
+    }
+  };
+
   const stats = [
     { label: 'Synced Appointments', value: loading ? '...' : appointments.length, change: 'Live', icon: Calendar, color: 'blue' },
     { label: 'AI Processed Queries', value: loading ? '...' : '100% Active', change: 'Active', icon: MessageSquare, color: 'teal' },
@@ -209,6 +303,52 @@ const DashboardPage = () => {
 
           {/* AI Health */}
           <div className="space-y-8">
+            {/* Google Calendar Management */}
+            <div className="clinical-card p-10 bg-white shadow-sm">
+              <h3 className="text-lg font-black uppercase tracking-widest mb-6 flex items-center gap-3 text-[#0a2540]">
+                <Calendar className="w-5 h-5 text-[#10b981]" /> Google Calendar Sync
+              </h3>
+              
+              {calendarError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-xs font-bold">
+                  {calendarError}
+                </div>
+              )}
+
+              <div className="space-y-6">
+                <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-2xl">
+                  <div>
+                    <div className="text-xs font-black uppercase tracking-wider text-[#0a2540] mb-1">Status</div>
+                    <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
+                      <div className={`w-2 h-2 rounded-full ${profile?.calendarConnected ? 'bg-[#10b981] animate-pulse' : 'bg-red-500'}`} />
+                      {profile?.calendarConnected ? 'Connected & Active' : 'Disconnected'}
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-400 font-medium max-w-[150px] text-right">
+                    {profile?.calendarConnected ? 'AI blocks slots automatically.' : 'Sync required for AI booking.'}
+                  </div>
+                </div>
+
+                {profile?.calendarConnected ? (
+                  <button
+                    onClick={handleDisconnectCalendar}
+                    disabled={calendarLoading}
+                    className="w-full py-4 bg-red-50 text-red-600 border border-red-100 hover:bg-red-100/50 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-sm disabled:opacity-50"
+                  >
+                    {calendarLoading ? 'Disconnecting...' : 'Disconnect Calendar'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleConnectCalendar}
+                    disabled={calendarLoading}
+                    className="w-full py-4 bg-[#10b981] hover:bg-[#0d9668] text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {calendarLoading ? 'Connecting...' : 'Connect Google Calendar'}
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="clinical-card p-10 bg-white shadow-sm">
               <h3 className="text-lg font-black uppercase tracking-widest mb-8 flex items-center gap-3 text-[#0a2540]">
                 <Bot className="w-5 h-5 text-[#10b981]" /> AI Brain Health
