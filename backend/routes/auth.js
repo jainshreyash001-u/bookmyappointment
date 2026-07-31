@@ -276,4 +276,57 @@ router.post("/verify-otp", async (req, res) => {
     }
 });
 
+// Auth middleware for authenticated auth routes
+function auth(req, res, next) {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (!token) return res.status(401).json({ error: "Unauthorized" });
+
+    try {
+        req.dentist = jwt.verify(token, process.env.JWT_SECRET);
+        next();
+    } catch {
+        res.status(401).json({ error: "Invalid token" });
+    }
+}
+
+// POST /api/auth/change-password
+router.post("/change-password", auth, async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: "Current password and new password are required" });
+    }
+
+    try {
+        const { getDentistById } = require("../services/database");
+        const dentist = await getDentistById(req.dentist.dentistId);
+        if (!dentist) return res.status(404).json({ error: "Dentist not found" });
+
+        // Get stored hash
+        const passwordHash = dentist.fields.PasswordHash;
+        if (!passwordHash) {
+            return res.status(400).json({ error: "Please log out and use Forgot Password to initialize your password first." });
+        }
+
+        // Compare current password
+        const isMatch = await bcrypt.compare(currentPassword, passwordHash);
+        if (!isMatch) {
+            return res.status(400).json({ error: "Incorrect current password" });
+        }
+
+        // Hash new password
+        const newHash = await bcrypt.hash(newPassword, 10);
+
+        // Update database
+        await updateDentist(dentist.id, {
+            PasswordHash: newHash,
+        });
+
+        res.json({ success: true, message: "Password updated successfully" });
+    } catch (err) {
+        console.error("[Change Password Error]", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

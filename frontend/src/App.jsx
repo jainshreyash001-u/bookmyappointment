@@ -13,6 +13,7 @@ import SignupPage from './pages/SignupPage';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import QueriesPage from './pages/QueriesPage';
+import StatusPage from './pages/StatusPage';
 import OnboardingPage from './pages/OnboardingPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
@@ -38,6 +39,7 @@ function App() {
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/queries" element={<QueriesPage />} />
+        <Route path="/status" element={<StatusPage />} />
 
         {/* Developer Admin Routes */}
         <Route path="/admin" element={<AdminLoginPage />} />

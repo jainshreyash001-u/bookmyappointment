@@ -242,6 +242,50 @@ async function runTests() {
       }
     }
 
+    // 8d. Test Authenticated Change Password
+    console.log("   8d. Testing Change Password with Correct Current Password...");
+    const changePassRes = await axios.post(`${API_BASE}/api/auth/change-password`, {
+      currentPassword: "TestPassword123",
+      newPassword: "UpdatedTestPassword123"
+    }, {
+      headers: { Authorization: `Bearer ${loginToken}` }
+    });
+    if (changePassRes.data.success) {
+      console.log("       ✓ Change password endpoint returned success true.");
+    } else {
+      console.log("       ✗ Failed: Change password endpoint returned success false.");
+    }
+
+    // 8e. Verify Log In with New Password
+    console.log("   8e. Verifying Login with New Password...");
+    const newLoginRes = await axios.post(`${API_BASE}/api/auth/login`, {
+      email: testEmail,
+      password: "UpdatedTestPassword123"
+    });
+    if (newLoginRes.data.token) {
+      console.log("       ✓ Successfully logged in with the new password.");
+    } else {
+      console.log("       ✗ Failed: Could not login with the new password.");
+    }
+
+    // 8f. Test Change Password with Incorrect Current Password
+    console.log("   8f. Testing Change Password with Incorrect Current Password...");
+    try {
+      await axios.post(`${API_BASE}/api/auth/change-password`, {
+        currentPassword: "WrongPassword123",
+        newPassword: "YetAnotherPassword123"
+      }, {
+        headers: { Authorization: `Bearer ${newLoginRes.data.token}` }
+      });
+      console.log("       ✗ Failed: Server accepted incorrect current password.");
+    } catch (err) {
+      if (err.response && err.response.status === 400) {
+        console.log(`       ✓ Correctly Blocked with 400: "${err.response.data.error}"\n`);
+      } else {
+        console.log(`       ✗ Unexpected response: ${err.message}\n`);
+      }
+    }
+
     console.log("==========================================");
     console.log("   ✓ ALL AUTHENTICATION SYSTEM TESTS PASSED! ");
     console.log("==========================================");

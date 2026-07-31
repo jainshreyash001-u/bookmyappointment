@@ -31,3 +31,12 @@
   - [x] Create backend `POST /api/dentist/disconnect-calendar` in `backend/routes/dentist.js` to clear OAuth tokens
   - [x] Implement calendar state variables and API dispatchers in `frontend/src/pages/DashboardPage.jsx`
   - [x] Build Google Calendar Management Card with dynamic status and connect/disconnect buttons in `DashboardPage.jsx`
+
+- [x] **7. Authenticated Password Change & Status Page**
+  - [x] Implement secure `POST /api/auth/change-password` endpoint in `backend/routes/auth.js`
+  - [x] Add Settings gear icon above Logout button in `frontend/src/components/Sidebar.jsx`
+  - [x] Implement framer-motion slide-up settings panel overlay in `Sidebar.jsx`
+  - [x] Create `frontend/src/pages/StatusPage.jsx` for AI brain health and Google Calendar status
+  - [x] Add the "Status" tab to the sidebar in `Sidebar.jsx`
+  - [x] Update frontend routing in `frontend/src/App.jsx`
+  - [x] Run backend tests locally and verify functionality in the browser
