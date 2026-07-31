@@ -42,6 +42,9 @@ const Navbar = () => {
 
         {/* Action Button & Hamburger */}
         <div className="flex items-center gap-4">
+          <Link to="/login" className="text-[#0a2540] hover:text-[#10b981] text-xs font-black tracking-wider uppercase transition-colors hidden sm:inline-block mr-2">
+            LOGIN
+          </Link>
           <Link to="/signup" className="clinical-btn-accent hidden sm:inline-block px-6 py-2.5 text-xs tracking-wider uppercase font-bold">
             GET STARTED
           </Link>
@@ -70,9 +73,16 @@ const Navbar = () => {
             </Link>
           ))}
           <Link 
+            to="/login" 
+            onClick={() => setMobileMenuOpen(false)}
+            className="text-center w-full py-3 text-xs tracking-wider uppercase font-bold mt-2 text-[#0a2540] hover:text-[#10b981] transition-colors border border-gray-100 rounded-2xl"
+          >
+            LOGIN
+          </Link>
+          <Link 
             to="/signup" 
             onClick={() => setMobileMenuOpen(false)}
-            className="clinical-btn-accent text-center w-full py-3 text-xs tracking-wider uppercase font-bold mt-2"
+            className="clinical-btn-accent text-center w-full py-3 text-xs tracking-wider uppercase font-bold"
           >
             GET STARTED
           </Link>
