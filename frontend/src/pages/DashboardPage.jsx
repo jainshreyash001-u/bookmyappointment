@@ -28,6 +28,15 @@ const DashboardPage = () => {
         const profileRes = await fetch(`${API_BASE}/api/dentist/profile`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        
+        if (profileRes.status === 401 || profileRes.status === 404) {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userPlan');
+          localStorage.removeItem('dentistId');
+          navigate('/login');
+          return;
+        }
+
         const profileData = await profileRes.json();
         if (profileData.error) throw new Error(profileData.error);
         setProfile(profileData);
@@ -36,6 +45,15 @@ const DashboardPage = () => {
         const apptsRes = await fetch(`${API_BASE}/api/dentist/appointments`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+
+        if (apptsRes.status === 401 || apptsRes.status === 404) {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userPlan');
+          localStorage.removeItem('dentistId');
+          navigate('/login');
+          return;
+        }
+
         const apptsData = await apptsRes.json();
         setAppointments(apptsData.appointments || []);
       } catch (err) {
