@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const Sidebar = ({ handleLogout }) => {
   const location = useLocation();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('profile'); // 'profile', 'knowledge', 'password'
+  const [activeTab, setActiveTab] = useState('knowledge'); // 'knowledge', 'password'
 
   // Profile fields state
   const [doctorName, setDoctorName] = useState('');
@@ -66,12 +67,12 @@ const Sidebar = ({ handleLogout }) => {
   };
 
   useEffect(() => {
-    if (isSettingsOpen) {
+    if (isSettingsOpen || isProfileOpen) {
       fetchSettingsData();
       setErrorMsg('');
       setSuccessMsg('');
     }
-  }, [isSettingsOpen]);
+  }, [isSettingsOpen, isProfileOpen]);
 
   // Profile Update Handler
   const handleUpdateProfile = async (e) => {
@@ -280,7 +281,7 @@ const Sidebar = ({ handleLogout }) => {
 
           <div className="pt-12 border-t border-gray-100 space-y-4">
             <button 
-              onClick={() => { setIsSettingsOpen(true); setActiveTab('profile'); }}
+              onClick={() => setIsProfileOpen(true)}
               className="flex items-center gap-4 px-4 py-3 text-gray-500 hover:bg-gray-100/50 w-full rounded-xl transition-all font-black text-sm uppercase tracking-wider focus:outline-none"
             >
               <User className="w-5 h-5 shrink-0 text-gray-500" />
@@ -297,6 +298,172 @@ const Sidebar = ({ handleLogout }) => {
           </div>
         </div>
       </aside>
+
+      {/* Profile slide-up panel */}
+      <AnimatePresence>
+        {isProfileOpen && (
+          <>
+            {/* Dark Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setIsProfileOpen(false);
+                setErrorMsg('');
+                setSuccessMsg('');
+              }}
+              className="fixed inset-0 bg-[#0a2540]/40 backdrop-blur-sm z-50"
+            />
+
+            {/* Slide-Up Drawer Panel */}
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 max-h-[85vh] bg-white rounded-t-[32px] shadow-2xl border-t border-gray-100 z-50 overflow-y-auto flex flex-col font-sans"
+            >
+              {/* Drawer Handle */}
+              <div className="flex justify-center pt-4 pb-2">
+                <div className="w-16 h-1.5 bg-gray-200 rounded-full" />
+              </div>
+
+              <div className="max-w-xl mx-auto w-full px-6 pb-12 pt-4">
+                {/* Header */}
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="text-xl font-black uppercase tracking-tight text-[#0a2540]">
+                      Clinic Profile
+                    </h3>
+                    <p className="text-xs text-gray-500 font-semibold mt-0.5">Manage your clinic details and operating hours</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      setErrorMsg('');
+                      setSuccessMsg('');
+                    }}
+                    className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 focus:outline-none"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Error & Success Messages */}
+                {errorMsg && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 mb-6 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-xs font-bold flex items-center gap-3 animate-pulse"
+                  >
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{errorMsg}</span>
+                  </motion.div>
+                )}
+
+                {successMsg && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 mb-6 bg-green-50 border border-green-100 text-[#10b981] rounded-2xl text-xs font-bold flex items-center gap-3"
+                  >
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>{successMsg}</span>
+                  </motion.div>
+                )}
+
+                {/* Profile Form */}
+                <form onSubmit={handleUpdateProfile} className="space-y-6">
+                  {/* Doctor Name Top Display */}
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 border border-gray-100 rounded-2xl shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-[#0a2540] text-white flex items-center justify-center font-black text-sm shrink-0">
+                      DR
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Registered Doctor</span>
+                      <span className="text-sm font-black text-[#0a2540] uppercase tracking-wide">{doctorName || 'Not Set'}</span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/30 flex items-start gap-4">
+                    <Settings className="w-5 h-5 text-[#10b981] mt-0.5" />
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider text-[#0a2540]">Clinic Configuration</h4>
+                      <p className="text-[10px] text-gray-400 font-medium">Update your clinic details and operating hours for the AI receptionist.</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/60 mb-2 block">
+                        Doctor Name
+                      </label>
+                      <input
+                        type="text"
+                        value={doctorName}
+                        onChange={(e) => setDoctorName(e.target.value)}
+                        placeholder="e.g. Dr. Shreyash Jain"
+                        className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl px-5 py-4 text-sm font-semibold text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] focus:outline-none transition-all"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/60 mb-2 block">
+                        Clinic Name
+                      </label>
+                      <input
+                        type="text"
+                        value={clinicName}
+                        onChange={(e) => setClinicName(e.target.value)}
+                        placeholder="e.g. Bright Smiles Dental"
+                        className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl px-5 py-4 text-sm font-semibold text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] focus:outline-none transition-all"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/60 mb-2 block">
+                        Clinic Address
+                      </label>
+                      <textarea
+                        value={clinicAddress}
+                        onChange={(e) => setClinicAddress(e.target.value)}
+                        placeholder="e.g. 123 Dental Suite, Medical District"
+                        className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl px-5 py-4 text-sm font-semibold text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] focus:outline-none transition-all h-20 resize-none"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/60 mb-2 block">
+                        Operating Hours
+                      </label>
+                      <input
+                        type="text"
+                        value={operatingHours}
+                        onChange={(e) => setOperatingHours(e.target.value)}
+                        placeholder="e.g. Mon-Sat: 10AM - 8PM, Sun: Closed"
+                        className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl px-5 py-4 text-sm font-semibold text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] focus:outline-none transition-all"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-4 bg-[#0a2540] hover:bg-[#10b981] text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-md disabled:opacity-50"
+                  >
+                    {loading ? 'Saving Profile...' : 'Save Profile Details'}
+                  </button>
+                </form>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Settings slide-up panel */}
       <AnimatePresence>
@@ -362,17 +529,6 @@ const Sidebar = ({ handleLogout }) => {
                 <div className="flex gap-2 border-b border-gray-100 pb-4 mb-6">
                   <button
                     type="button"
-                    onClick={() => { setActiveTab('profile'); setErrorMsg(''); setSuccessMsg(''); }}
-                    className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
-                      activeTab === 'profile'
-                        ? 'bg-[#0a2540] text-white shadow-sm'
-                        : 'bg-gray-50 text-gray-500 hover:bg-gray-100/80'
-                    }`}
-                  >
-                    Clinic Profile
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => { setActiveTab('knowledge'); setErrorMsg(''); setSuccessMsg(''); }}
                     className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
                       activeTab === 'knowledge'
@@ -418,96 +574,7 @@ const Sidebar = ({ handleLogout }) => {
                   </motion.div>
                 )}
 
-                {/* 1. Clinic Profile & Hours */}
-                {activeTab === 'profile' && (
-                  <form onSubmit={handleUpdateProfile} className="space-y-6">
-                    {/* Doctor Name Top Display */}
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 border border-gray-100 rounded-2xl shadow-sm">
-                      <div className="w-10 h-10 rounded-xl bg-[#0a2540] text-white flex items-center justify-center font-black text-sm shrink-0">
-                        DR
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Registered Doctor</span>
-                        <span className="text-sm font-black text-[#0a2540] uppercase tracking-wide">{doctorName || 'Not Set'}</span>
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/30 flex items-start gap-4">
-                      <Settings className="w-5 h-5 text-[#10b981] mt-0.5" />
-                      <div>
-                        <h4 className="text-xs font-black uppercase tracking-wider text-[#0a2540]">Clinic Configuration</h4>
-                        <p className="text-[10px] text-gray-400 font-medium">Update your clinic details and operating hours for the AI receptionist.</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/60 mb-2 block">
-                          Doctor Name
-                        </label>
-                        <input
-                          type="text"
-                          value={doctorName}
-                          onChange={(e) => setDoctorName(e.target.value)}
-                          placeholder="e.g. Dr. Shreyash Jain"
-                          className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl px-5 py-4 text-sm font-semibold text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] focus:outline-none transition-all"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/60 mb-2 block">
-                          Clinic Name
-                        </label>
-                        <input
-                          type="text"
-                          value={clinicName}
-                          onChange={(e) => setClinicName(e.target.value)}
-                          placeholder="e.g. Bright Smiles Dental"
-                          className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl px-5 py-4 text-sm font-semibold text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] focus:outline-none transition-all"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/60 mb-2 block">
-                          Clinic Address
-                        </label>
-                        <textarea
-                          value={clinicAddress}
-                          onChange={(e) => setClinicAddress(e.target.value)}
-                          placeholder="e.g. 123 Dental Suite, Medical District"
-                          className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl px-5 py-4 text-sm font-semibold text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] focus:outline-none transition-all h-20 resize-none"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/60 mb-2 block">
-                          Operating Hours
-                        </label>
-                        <input
-                          type="text"
-                          value={operatingHours}
-                          onChange={(e) => setOperatingHours(e.target.value)}
-                          placeholder="e.g. Mon-Sat: 10AM - 8PM, Sun: Closed"
-                          className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl px-5 py-4 text-sm font-semibold text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] focus:outline-none transition-all"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full py-4 bg-[#0a2540] hover:bg-[#10b981] text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-md disabled:opacity-50"
-                    >
-                      {loading ? 'Saving Profile...' : 'Save Profile Details'}
-                    </button>
-                  </form>
-                )}
-
-                {/* 2. AI Guidelines (Knowledge Base) */}
+                {/* 1. AI Guidelines (Knowledge Base) */}
                 {activeTab === 'knowledge' && (
                   <div className="space-y-8">
                     <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/30 flex items-start gap-4">
@@ -575,7 +642,7 @@ const Sidebar = ({ handleLogout }) => {
                   </div>
                 )}
 
-                {/* 3. Password Modification */}
+                {/* 2. Password Modification */}
                 {activeTab === 'password' && (
                   <form onSubmit={handleChangePassword} className="space-y-6">
                     <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-start gap-4">
