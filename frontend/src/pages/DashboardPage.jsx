@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, Users, Calendar, TrendingUp, MessageSquare, Bell, Settings, LogOut, Bot, CheckCircle2, Clock, Phone, AlertTriangle } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import Sidebar from '../components/Sidebar';
 
 const DashboardPage = () => {
   const location = useLocation();
@@ -97,41 +98,7 @@ const DashboardPage = () => {
   return (
     <div className="flex min-h-screen bg-white pt-28 text-[#0a2540]">
       {/* Sidebar */}
-      <aside className="w-72 border-r border-gray-100 p-8 hidden lg:block bg-gray-50/50">
-        <div className="space-y-12">
-          <div className="space-y-4">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/60">MANAGEMENT</h4>
-            <nav className="space-y-2">
-              {[
-                { name: 'Overview', icon: Activity, active: location.pathname === '/dashboard', path: '/dashboard' },
-                { name: 'Queries', icon: MessageSquare, active: location.pathname === '/queries', path: '/queries' },
-                { name: 'Appointments', icon: Calendar, path: '/appointments' },
-                { name: 'AI Brain', icon: Bot, path: '/ai-brain' },
-                { name: 'Knowledge Base', icon: Settings, path: '/knowledge' }
-              ].map((item, i) => (
-                <Link 
-                  key={i} 
-                  to={item.path}
-                  className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all ${item.active ? 'bg-[#0a2540]/5 text-[#0a2540] border border-[#0a2540]/10 font-bold shadow-sm' : 'text-gray-500 hover:bg-gray-100/50 hover:text-[#0a2540]'}`}
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span className="text-sm font-bold tracking-tight">{item.name}</span>
-                </Link>
-              ))}
-            </nav>
-          </div>
-
-          <div className="pt-12 border-t border-gray-100">
-            <button 
-              onClick={handleLogout}
-              className="flex items-center gap-4 px-4 py-3 text-red-500 hover:bg-red-50 w-full rounded-xl transition-all font-bold text-sm"
-            >
-              <LogOut className="w-5 h-5" />
-              <span className="text-sm font-bold tracking-tight">Logout</span>
-            </button>
-          </div>
-        </div>
-      </aside>
+      <Sidebar handleLogout={handleLogout} />
 
       {/* Main Content */}
       <main className="flex-1 p-8 lg:p-12 overflow-y-auto bg-gray-50/30">
@@ -150,7 +117,7 @@ const DashboardPage = () => {
               </div>
               <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#0a2540]/60">
                 <div className="w-2 h-2 bg-[#10b981] rounded-full animate-pulse" />
-                Airtable: Linked
+                Database: Connected
               </div>
             </div>
             <div className="w-12 h-12 bg-[#0a2540] text-white rounded-xl flex items-center justify-center font-black shadow-sm">

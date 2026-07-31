@@ -78,7 +78,7 @@ const OnboardingPage = () => {
       const token = localStorage.getItem('authToken');
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
-      // Save working hours to Airtable
+      // Save working hours to Database
       const resProfile = await fetch(`${API_BASE}/api/dentist/profile`, {
         method: 'PATCH',
         headers: { 
@@ -94,7 +94,7 @@ const OnboardingPage = () => {
         throw new Error(dataProfile.error || 'Failed to save working hours');
       }
 
-      // Save Cancellation Policy to Pinecone
+      // Save Cancellation Policy to Database
       const resKnowledge = await fetch(`${API_BASE}/api/dentist/knowledge`, {
         method: 'POST',
         headers: {

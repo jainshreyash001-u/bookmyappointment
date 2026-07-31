@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { Bot, MessageSquare, ShieldCheck, Mail, Phone, Globe } from 'lucide-react';
+import ChatWidget from './ChatWidget';
+import Navbar from './Navbar';
 
 const Layout = () => {
   const location = useLocation();
@@ -16,41 +18,14 @@ const Layout = () => {
       {/* Light Clinical Mesh Background */}
       <div className="mesh-gradient" />
       
+      
       {/* Sticky Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-[100] px-6 py-4 bg-white/70 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 bg-[#0a2540] rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-md">
-              <Bot className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-black tracking-tight text-[#0a2540]">
-              BMA <span className="text-[#10b981]">AI</span>
-            </span>
-          </Link>
-
-          <div className="hidden md:flex items-center gap-10">
-            {navLinks.map((link) => (
-              <Link 
-                key={link.path}
-                to={link.path}
-                className={`text-sm font-bold tracking-wider uppercase transition-all hover:text-[#10b981] ${
-                  location.pathname === link.path ? 'text-[#10b981]' : 'text-gray-500'
-                }`}
-              >
-                {link.name}
-              </Link>
-            ))}
-          </div>
-
-          <Link to="/signup" className="clinical-btn-accent px-6 py-2.5 text-xs tracking-wider uppercase">
-            GET STARTED
-          </Link>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Main Content Area */}
       <main className="relative z-10 min-h-[calc(100vh-350px)] pt-20">
         <Outlet />
+        <ChatWidget dentistId="DT_DEMO" />
       </main>
 
       {/* Professional B2B Footer */}

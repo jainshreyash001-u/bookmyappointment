@@ -22,7 +22,7 @@ const HomePage = () => {
   const faqs = [
     {
       q: "Does it integrate with my existing clinic system?",
-      a: "Yes! BookMyAppointment syncs directly with Google Calendar and Airtable with a 1-click authorization. There is no complicated software integration or technical background required."
+      a: "Yes! BookMyAppointment syncs directly with Google Calendar and your cloud database with a 1-click authorization. There is no complicated software integration or technical background required."
     },
     {
       q: "How does the 6-Hour automatic slot release rule work?",
@@ -185,7 +185,7 @@ const HomePage = () => {
                 </li>
                 <li className="flex gap-3">
                   <CheckCircle2 className="w-5 h-5 text-[#10b981] shrink-0 mt-0.5" />
-                  Real-time synchronization with Google Calendar & Airtable.
+                  Real-time synchronization with Google Calendar & cloud database.
                 </li>
               </ul>
             </div>
