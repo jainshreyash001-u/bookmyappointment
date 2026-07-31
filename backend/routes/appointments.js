@@ -1,8 +1,3 @@
-/**
- * routes/appointments.js
- * Appointment management
- */
-
 const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
@@ -16,6 +11,7 @@ const {
 } = require("../services/database");
 const supabase = require("../services/supabaseClient");
 const { sendAppointmentReminder } = require("../services/whatsapp");
+const { bookAppointment, updateCalendarEvent, deleteAppointment } = require("../services/calendar");
 
 function auth(req, res, next) {
     const token = req.headers.authorization?.replace("Bearer ", "");
@@ -56,6 +52,28 @@ router.get("/", auth, async (req, res) => {
 router.post("/", auth, async (req, res) => {
     try {
         const { patientName, patientPhone, service, dateTime, duration, status, notes } = req.body;
+        
+        let eventId = null;
+        try {
+            const dentist = await getDentistById(req.dentist.dentistId);
+            const tokens = JSON.parse(dentist.fields.GoogleCalendarToken || "{}");
+            if (tokens.access_token) {
+                const calResult = await bookAppointment(tokens, {
+                    patientName,
+                    patientPhone,
+                    service,
+                    dateTime,
+                    duration: duration || 60,
+                    notes,
+                });
+                if (calResult.success) {
+                    eventId = calResult.eventId;
+                }
+            }
+        } catch (calErr) {
+            console.error("[Google Calendar Sync Error]", calErr.message);
+        }
+
         const appt = await createAppointment(req.dentist.dentistId, {
             PatientName: patientName,
             PatientPhone: patientPhone,
@@ -64,6 +82,7 @@ router.post("/", auth, async (req, res) => {
             Duration: duration,
             Status: status,
             Notes: notes,
+            EventID: eventId,
         });
 
         res.json({
@@ -88,6 +107,34 @@ router.post("/", auth, async (req, res) => {
 router.patch("/:id", auth, async (req, res) => {
     try {
         const { patientName, patientPhone, service, dateTime, duration, status, notes } = req.body;
+        
+        // 1. Get existing appointment from database
+        const { data: existingAppt } = await supabase
+            .from("appointments")
+            .select()
+            .eq("id", req.params.id)
+            .eq("dentist_id", req.dentist.dentistId)
+            .single();
+
+        if (existingAppt && existingAppt.event_id) {
+            try {
+                const dentist = await getDentistById(req.dentist.dentistId);
+                const tokens = JSON.parse(dentist.fields.GoogleCalendarToken || "{}");
+                if (tokens.access_token) {
+                    await updateCalendarEvent(tokens, existingAppt.event_id, {
+                        patientName: patientName || existingAppt.patient_name,
+                        patientPhone: patientPhone || existingAppt.patient_phone,
+                        service: service || existingAppt.service,
+                        dateTime: dateTime || existingAppt.date_time,
+                        duration: duration || existingAppt.duration,
+                        notes: notes || existingAppt.notes,
+                    });
+                }
+            } catch (calErr) {
+                console.error("[Google Calendar Sync Update Error]", calErr.message);
+            }
+        }
+
         const appt = await updateAppointment(req.params.id, {
             PatientName: patientName,
             PatientPhone: patientPhone,
@@ -119,6 +166,26 @@ router.patch("/:id", auth, async (req, res) => {
 // DELETE /api/appointments/:id
 router.delete("/:id", auth, async (req, res) => {
     try {
+        // 1. Get existing appointment from database to check for event_id
+        const { data: existingAppt } = await supabase
+            .from("appointments")
+            .select()
+            .eq("id", req.params.id)
+            .eq("dentist_id", req.dentist.dentistId)
+            .single();
+
+        if (existingAppt && existingAppt.event_id) {
+            try {
+                const dentist = await getDentistById(req.dentist.dentistId);
+                const tokens = JSON.parse(dentist.fields.GoogleCalendarToken || "{}");
+                if (tokens.access_token) {
+                    await deleteAppointment(tokens, existingAppt.event_id);
+                }
+            } catch (calErr) {
+                console.error("[Google Calendar Sync Delete Error]", calErr.message);
+            }
+        }
+
         const { error } = await supabase
             .from("appointments")
             .delete()

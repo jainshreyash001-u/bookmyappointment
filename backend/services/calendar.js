@@ -133,6 +133,43 @@ async function deleteAppointment(tokens, eventId) {
   }
 }
 
+async function updateCalendarEvent(tokens, eventId, appointmentData) {
+  try {
+    const calendar = getCalendarClient(tokens);
+    const startTime = new Date(appointmentData.dateTime);
+    const endTime = new Date(startTime.getTime() + (appointmentData.duration || 60) * 60000);
+
+    const event = {
+      summary: `Appointment: ${appointmentData.service}`,
+      description: `Patient: ${appointmentData.patientName}\nPhone: ${appointmentData.patientPhone}\nNotes: ${appointmentData.notes || ""}`,
+      start: {
+        dateTime: startTime.toISOString(),
+        timeZone: "Asia/Kolkata",
+      },
+      end: {
+        dateTime: endTime.toISOString(),
+        timeZone: "Asia/Kolkata",
+      },
+      attendees: [
+        {
+          email: appointmentData.patientPhone.replace(/[^0-9]/g, "") + "@appointments.bookmyappointment.com",
+        },
+      ],
+    };
+
+    const response = await calendar.events.patch({
+      calendarId: "primary",
+      eventId: eventId,
+      requestBody: event,
+    });
+
+    return { success: true, eventId: response.data.id };
+  } catch (err) {
+    console.error("[Update Appointment Calendar]", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
 module.exports = {
   getOAuthClient,
   getAuthUrl,
@@ -142,4 +179,5 @@ module.exports = {
   bookAppointment,
   getUpcomingAppointments,
   deleteAppointment,
+  updateCalendarEvent,
 };
