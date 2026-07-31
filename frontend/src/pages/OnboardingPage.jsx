@@ -288,7 +288,7 @@ const OnboardingPage = () => {
             
             <button 
               onClick={handleNext}
-              disabled={loading || (step === 1 && !googleConnected) || (step === 3 && !whatsappTested)}
+              disabled={loading}
               className="clinical-btn-primary px-8 py-4 text-xs tracking-widest uppercase flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'SAVING...' : (step === 3 ? 'FINISH SETUP' : 'CONTINUE')}
