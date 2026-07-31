@@ -153,6 +153,53 @@ async function runTests() {
       }
     }
 
+    // 7b. Forgot Password for Non-existent Email
+    console.log("Step 7b: Testing Forgot Password for Non-existent Email...");
+    try {
+      await axios.post(`${API_BASE}/api/auth/forgot-password`, {
+        email: "this_is_a_completely_fake_email_999@example.com"
+      });
+      console.log("   ✗ Failed: Server allowed forgot password request for non-existent email.");
+    } catch (err) {
+      if (err.response && err.response.status === 404) {
+        console.log(`   ✓ Correctly Blocked with 404: "${err.response.data.error}"\n`);
+      } else {
+        console.log(`   ✗ Unexpected response: ${err.message}\n`);
+      }
+    }
+
+    // 7c. Forgot Password for Registered Email
+    console.log("Step 7c: Testing Forgot Password for Registered Email...");
+    try {
+      const forgotRes = await axios.post(`${API_BASE}/api/auth/forgot-password`, {
+        email: testEmail
+      });
+      if (forgotRes.data.success) {
+        console.log("   ✓ OTP sent successfully to registered email!\n");
+      } else {
+        console.log("   ✗ Failed: Forgot password endpoint returned success false.\n");
+      }
+    } catch (err) {
+      console.log(`   ✗ Failed: ${err.message}\n`);
+    }
+
+    // 7d. Verify OTP with Invalid Code
+    console.log("Step 7d: Testing Verify OTP with Invalid Code...");
+    try {
+      await axios.post(`${API_BASE}/api/auth/verify-otp`, {
+        email: testEmail,
+        otp: "000000",
+        newPassword: "NewSecurePassword123"
+      });
+      console.log("   ✗ Failed: Server accepted invalid OTP code.");
+    } catch (err) {
+      if (err.response && err.response.status === 400) {
+        console.log(`   ✓ Correctly Blocked with 400: "${err.response.data.error}"\n`);
+      } else {
+        console.log(`   ✗ Unexpected response: ${err.message}\n`);
+      }
+    }
+
     // 8. Auth Gateway Access (/profile)
     console.log("Step 8: Testing Authentication Headers (GET /api/dentist/profile)...");
     

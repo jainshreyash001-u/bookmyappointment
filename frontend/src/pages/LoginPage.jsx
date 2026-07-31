@@ -9,6 +9,77 @@ const LoginPage = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Password reset states
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1); // 1 = email input, 2 = code & password input
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState('');
+
+  const handleRequestOTP = async (e) => {
+    e.preventDefault();
+    setForgotError('');
+    setForgotSuccess('');
+    setForgotLoading(true);
+
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setForgotSuccess(data.message || 'Verification code sent to your email.');
+        setForgotStep(2);
+      } else {
+        setForgotError(data.error || 'Failed to send verification code.');
+      }
+    } catch (err) {
+      setForgotError('Could not connect to authentication server.');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    setForgotError('');
+    setForgotSuccess('');
+    setForgotLoading(true);
+
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const res = await fetch(`${API_BASE}/api/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: forgotEmail,
+          otp: otpCode,
+          newPassword: newPassword
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setForgotSuccess('Password reset successfully! You can now log in.');
+        setTimeout(() => {
+          setShowForgotModal(false);
+          setFormData({ ...formData, email: forgotEmail, password: '' });
+        }, 2000);
+      } else {
+        setForgotError(data.error || 'Failed to reset password.');
+      }
+    } catch (err) {
+      setForgotError('Could not connect to authentication server.');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
@@ -86,7 +157,21 @@ const LoginPage = () => {
             <div className="space-y-2">
               <div className="flex justify-between items-center ml-1">
                 <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80">Password</label>
-                <a href="#" className="text-[10px] font-black uppercase tracking-widest text-[#10b981] hover:text-[#0d9668] transition-colors">Forgot?</a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotEmail(formData.email);
+                    setShowForgotModal(true);
+                    setForgotStep(1);
+                    setForgotError('');
+                    setForgotSuccess('');
+                    setOtpCode('');
+                    setNewPassword('');
+                  }}
+                  className="text-[10px] font-black uppercase tracking-widest text-[#10b981] hover:text-[#0d9668] transition-colors outline-none"
+                >
+                  Forgot?
+                </button>
               </div>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0a2540]/40" />
@@ -127,6 +212,103 @@ const LoginPage = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* Forgot Password Recovery Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 relative overflow-hidden"
+          >
+            <button
+              onClick={() => setShowForgotModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 font-bold text-lg"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-2xl font-black tracking-tight text-[#0a2540] uppercase mb-2">
+              Reset <span className="text-[#10b981]">Password</span>
+            </h2>
+            <p className="text-gray-500 text-xs font-semibold mb-6">
+              {forgotStep === 1
+                ? "Enter your email to receive a secure 6-digit verification code."
+                : "Enter the code sent to your email and set your new password."}
+            </p>
+
+            {forgotError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-xs font-bold text-center">
+                {forgotError}
+              </div>
+            )}
+
+            {forgotSuccess && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-100 text-[#10b981] rounded-xl text-xs font-bold text-center">
+                {forgotSuccess}
+              </div>
+            )}
+
+            {forgotStep === 1 ? (
+              <form onSubmit={handleRequestOTP} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80">Email Address</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="name@clinic.com"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-5 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none transition-all"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="clinical-btn-primary w-full py-4 text-xs tracking-wider uppercase font-black flex items-center justify-center gap-3 disabled:opacity-50"
+                >
+                  {forgotLoading ? 'Sending Code...' : 'Send Reset Code'}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyOTP} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80">6-Digit Code</label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    placeholder="123456"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-5 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none transition-all text-center tracking-widest font-bold"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80">New Password</label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="••••••••"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-5 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none transition-all"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="clinical-btn-primary w-full py-4 text-xs tracking-wider uppercase font-black flex items-center justify-center gap-3 disabled:opacity-50"
+                >
+                  {forgotLoading ? 'Updating Password...' : 'Reset Password'}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </form>
+            )}
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

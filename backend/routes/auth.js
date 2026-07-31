@@ -191,4 +191,89 @@ router.get("/google/callback", async (req, res) => {
     }
 });
 
+// In-memory OTP storage
+const otpStore = {}; // { email: { code, expiresAt } }
+
+// POST /api/auth/forgot-password
+router.post("/forgot-password", async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    try {
+        const dentist = await getDentistByEmail(normalizedEmail);
+        if (!dentist) {
+            return res.status(404).json({ error: "This email is not registered. Please sign up first." });
+        }
+
+        // Generate 6-digit code
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Store in memory with 15-minute expiration
+        otpStore[normalizedEmail] = {
+            code: otpCode,
+            expiresAt: Date.now() + 15 * 60 * 1000,
+        };
+
+        // Send via SendGrid
+        const { sendOTPEmail } = require("../services/email");
+        await sendOTPEmail(normalizedEmail, otpCode);
+
+        res.json({ success: true, message: "Verification code sent to your email" });
+    } catch (err) {
+        console.error("[Forgot Password Error]", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/auth/verify-otp
+router.post("/verify-otp", async (req, res) => {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) {
+        return res.status(400).json({ error: "Email, code, and new password are required" });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    try {
+        const dentist = await getDentistByEmail(normalizedEmail);
+        if (!dentist) {
+            return res.status(404).json({ error: "Dentist not found" });
+        }
+
+        const record = otpStore[normalizedEmail];
+        if (!record) {
+            return res.status(400).json({ error: "No verification code was sent to this email" });
+        }
+
+        if (record.code !== otp.trim()) {
+            return res.status(400).json({ error: "Incorrect verification code" });
+        }
+
+        if (Date.now() > record.expiresAt) {
+            delete otpStore[normalizedEmail];
+            return res.status(400).json({ error: "Verification code has expired" });
+        }
+
+        // Hash new password
+        const passwordHash = await bcrypt.hash(newPassword, 10);
+        
+        // Update in database
+        await updateDentist(dentist.id, {
+            PasswordHash: passwordHash,
+        });
+
+        // Clean up OTP store
+        delete otpStore[normalizedEmail];
+
+        res.json({ success: true, message: "Password reset successfully" });
+    } catch (err) {
+        console.error("[Verify OTP Error]", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
