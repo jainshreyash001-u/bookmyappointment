@@ -6,6 +6,7 @@
 const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
+const supabase = require("../services/supabaseClient");
 const {
     getDentistById,
     updateDentist,
@@ -126,6 +127,39 @@ router.post("/knowledge", auth, async (req, res) => {
             success: true,
             message: `${docs.length} knowledge entries added`,
         });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/dentist/knowledge
+router.get("/knowledge", auth, async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from("dentist_knowledge")
+            .select("id, type, title, content")
+            .eq("dentist_id", req.dentist.dentistId);
+
+        if (error) throw error;
+
+        res.json({ success: true, entries: data || [] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE /api/dentist/knowledge/:id
+router.delete("/knowledge/:id", auth, async (req, res) => {
+    try {
+        const { error } = await supabase
+            .from("dentist_knowledge")
+            .delete()
+            .eq("id", req.params.id)
+            .eq("dentist_id", req.dentist.dentistId);
+
+        if (error) throw error;
+
+        res.json({ success: true, message: "Knowledge entry deleted successfully." });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

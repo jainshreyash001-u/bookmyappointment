@@ -286,6 +286,21 @@ async function runTests() {
       }
     }
 
+    // 8g. Test Disconnect Calendar
+    console.log("   8g. Testing Disconnect Calendar...");
+    try {
+      const disconnectRes = await axios.post(`${API_BASE}/api/dentist/disconnect-calendar`, {}, {
+        headers: { Authorization: `Bearer ${newLoginRes.data.token}` }
+      });
+      console.log(`       ✓ Disconnect Calendar returned: ${JSON.stringify(disconnectRes.data)}\n`);
+    } catch (err) {
+      if (err.response) {
+        console.log(`       ✗ Failed with status ${err.response.status}: ${JSON.stringify(err.response.data)}\n`);
+      } else {
+        console.log(`       ✗ Failed: ${err.message}\n`);
+      }
+    }
+
     console.log("==========================================");
     console.log("   ✓ ALL AUTHENTICATION SYSTEM TESTS PASSED! ");
     console.log("==========================================");
