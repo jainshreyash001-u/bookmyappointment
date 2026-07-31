@@ -11,7 +11,7 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
-const { createDentist, getDentistByEmail } = require("../services/database");
+const { createDentist, getDentistByEmail, updateDentist } = require("../services/database");
 const { initializeDentistNamespace } = require("../services/knowledge");
 const { sendWhatsAppMessage } = require("../services/whatsapp");
 const { createDentistSlackInvite } = require("../services/slack");
@@ -122,12 +122,12 @@ router.post("/login", async (req, res) => {
                 return res.status(401).json({ error: "Incorrect password" });
             }
         } else {
-            // Fallback for legacy database records that have no stored password hash
-            const defaultHash = await bcrypt.hash("test_password_123", 10);
-            const isMatch = await bcrypt.compare(password, defaultHash);
-            if (!isMatch) {
-                return res.status(401).json({ error: "Incorrect password" });
-            }
+            // Auto-setup password for legacy database records that have no stored password hash
+            const newHash = await bcrypt.hash(password, 10);
+            await updateDentist(dentist.id, {
+                PasswordHash: newHash
+            });
+            console.log(`[Auth] Auto-set password hash for legacy dentist ${dentist.fields.Email}`);
         }
 
         const token = jwt.sign(
