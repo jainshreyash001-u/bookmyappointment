@@ -19,6 +19,8 @@ function auth(req, res, next) {
 
     try {
         req.dentist = jwt.verify(token, process.env.JWT_SECRET);
+        // Set active clinic ID (prioritize X-Clinic-ID header if present)
+        req.clinicId = req.headers["x-clinic-id"] || req.dentist.dentistId;
         next();
     } catch {
         res.status(401).json({ error: "Invalid token" });
@@ -28,7 +30,7 @@ function auth(req, res, next) {
 // GET /api/appointments
 router.get("/", auth, async (req, res) => {
     try {
-        const appointments = await getAppointmentsByDentist(req.dentist.dentistId);
+        const appointments = await getAppointmentsByDentist(req.clinicId);
 
         res.json({
             total: appointments.length,
@@ -55,7 +57,7 @@ router.post("/", auth, async (req, res) => {
         
         let eventId = null;
         try {
-            const dentist = await getDentistById(req.dentist.dentistId);
+            const dentist = await getDentistById(req.clinicId);
             const tokens = JSON.parse(dentist.fields.GoogleCalendarToken || "{}");
             if (tokens.access_token) {
                 const calResult = await bookAppointment(tokens, {
@@ -74,7 +76,7 @@ router.post("/", auth, async (req, res) => {
             console.error("[Google Calendar Sync Error]", calErr.message);
         }
 
-        const appt = await createAppointment(req.dentist.dentistId, {
+        const appt = await createAppointment(req.clinicId, {
             PatientName: patientName,
             PatientPhone: patientPhone,
             Service: service,
@@ -113,12 +115,12 @@ router.patch("/:id", auth, async (req, res) => {
             .from("appointments")
             .select()
             .eq("id", req.params.id)
-            .eq("dentist_id", req.dentist.dentistId)
+            .eq("dentist_id", req.clinicId)
             .single();
 
         if (existingAppt && existingAppt.event_id) {
             try {
-                const dentist = await getDentistById(req.dentist.dentistId);
+                const dentist = await getDentistById(req.clinicId);
                 const tokens = JSON.parse(dentist.fields.GoogleCalendarToken || "{}");
                 if (tokens.access_token) {
                     await updateCalendarEvent(tokens, existingAppt.event_id, {
@@ -171,12 +173,12 @@ router.delete("/:id", auth, async (req, res) => {
             .from("appointments")
             .select()
             .eq("id", req.params.id)
-            .eq("dentist_id", req.dentist.dentistId)
+            .eq("dentist_id", req.clinicId)
             .single();
 
         if (existingAppt && existingAppt.event_id) {
             try {
-                const dentist = await getDentistById(req.dentist.dentistId);
+                const dentist = await getDentistById(req.clinicId);
                 const tokens = JSON.parse(dentist.fields.GoogleCalendarToken || "{}");
                 if (tokens.access_token) {
                     await deleteAppointment(tokens, existingAppt.event_id);
@@ -190,7 +192,7 @@ router.delete("/:id", auth, async (req, res) => {
             .from("appointments")
             .delete()
             .eq("id", req.params.id)
-            .eq("dentist_id", req.dentist.dentistId);
+            .eq("dentist_id", req.clinicId);
 
         if (error) throw error;
 

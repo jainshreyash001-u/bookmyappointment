@@ -19,58 +19,114 @@ const bcrypt = require("bcryptjs");
 
 // POST /api/auth/signup
 router.post("/signup", async (req, res) => {
-    const { email, clinicName, phoneNumber, workingHours, slackMode, password } = req.body;
+    const { email, clinicName, phoneNumber, workingHours, slackMode, password, doctorName, clinics } = req.body;
 
-    if (!email || !clinicName) {
-        return res.status(400).json({ error: "Email and clinic name are required" });
+    if (!email) {
+        return res.status(400).json({ error: "Email is required" });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
 
     try {
-        // Check if dentist already exists
-        const existing = await getDentistByEmail(normalizedEmail);
-        if (existing) {
+        const { getDentistUserByEmail, createDentistUser, createDentist } = require("../services/database");
+        const supabase = require("../services/supabaseClient");
+        
+        // 1. Check if dentist already exists
+        const existingUser = await getDentistUserByEmail(normalizedEmail);
+        if (existingUser) {
             return res.status(400).json({ error: "Email already registered" });
         }
 
-        // Create dentist ID
-        const dentistId = `DT_${uuidv4().substring(0, 8).toUpperCase()}`;
+        // 2. Hash password
+        const passwordHash = await bcrypt.hash(password || "test_password_123", 10);
 
-        // Hash password
-        let passwordHash = null;
-        if (password) {
-            passwordHash = await bcrypt.hash(password, 10);
+        // 3. Create Dentist User Profile
+        const user = await createDentistUser(normalizedEmail, passwordHash, doctorName || clinicName);
+
+        // 4. Resolve clinics to create
+        let clinicsToCreate = [];
+        if (clinics && Array.isArray(clinics) && clinics.length > 0) {
+            clinicsToCreate = clinics;
         } else {
-            passwordHash = await bcrypt.hash("test_password_123", 10);
+            // Fallback for classic single-clinic signups
+            clinicsToCreate = [{
+                clinicName,
+                phoneNumber,
+                workingHours,
+                address: req.body.address || "Clinic Location Address"
+            }];
         }
 
-        // Create dentist in Database
-        const dentist = await createDentist({
-            DentistID: dentistId,
-            Name: clinicName,
-            Email: normalizedEmail,
-            WhatsAppNumber: phoneNumber,
-            ClinicName: clinicName,
-            WorkingHours: JSON.stringify(workingHours || {}),
-            SubscriptionStatus: "trial", // 14 day free trial
-            TrialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-            SlackNotificationMode: slackMode,
-            PasswordHash: passwordHash,
-        });
+        // Validate clinic addresses are unique in payload and in database
+        const addresses = clinicsToCreate.map(c => (c.address || "").trim().toLowerCase());
+        const uniqueAddresses = new Set(addresses);
+        if (uniqueAddresses.size !== addresses.length) {
+            return res.status(400).json({ error: "Duplicate clinic addresses entered in signup form." });
+        }
 
-        // Initialize knowledge namespace for this dentist
-        await initializeDentistNamespace(dentistId);
+        // Check if any of these addresses already exist in the DB
+        for (const clinicData of clinicsToCreate) {
+            const trimmedAddr = (clinicData.address || "").trim();
+            const { data: existingClinic } = await supabase
+                .from("dentists")
+                .select("id")
+                .eq("clinic_address", trimmedAddr)
+                .maybeSingle();
 
-        // Send welcome WhatsApp message
-        await sendWhatsAppMessage(phoneNumber, `Welcome to BookMyAppointment! Your clinic ${clinicName} has been activated. Start receiving appointments via WhatsApp! 🦷`);
+            if (existingClinic) {
+                return res.status(400).json({ error: `A clinic is already registered at the address: "${trimmedAddr}"` });
+            }
+        }
 
-        // Get Slack invite URL
-        const slackInviteUrl = await createDentistSlackInvite(dentist);
+        // 5. Create clinics
+        const createdClinics = [];
+        for (const clinicData of clinicsToCreate) {
+            const dentistId = `DT_${uuidv4().substring(0, 8).toUpperCase()}`;
+            
+            const clinic = await createDentist({
+                DentistID: dentistId,
+                OwnerID: user.id,
+                Name: clinicData.clinicName,
+                ClinicName: clinicData.clinicName,
+                Email: normalizedEmail,
+                WhatsAppNumber: clinicData.phoneNumber,
+                WorkingHours: JSON.stringify(clinicData.workingHours || {}),
+                SubscriptionStatus: "trial",
+                TrialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+                SlackNotificationMode: slackMode || "none",
+                ClinicAddress: clinicData.address,
+            });
+
+            // Initialize knowledge namespace
+            await initializeDentistNamespace(dentistId);
+
+            // Send welcome WhatsApp message if phone is provided
+            if (clinicData.phoneNumber) {
+                try {
+                    await sendWhatsAppMessage(clinicData.phoneNumber, `Welcome to BookMyAppointment! Your clinic ${clinicData.clinicName} has been activated. Start receiving appointments via WhatsApp! 🦷`);
+                } catch (err) {
+                    console.error("WhatsApp welcome error:", err.message);
+                }
+            }
+
+            createdClinics.push({
+                dentistId,
+                clinicName: clinicData.clinicName,
+                address: clinicData.address
+            });
+        }
+
+        // Return first clinic details as active default in JWT
+        const primaryClinic = createdClinics[0];
 
         // Create JWT token
         const token = jwt.sign(
-            { dentistId, email, clinicName },
+            { 
+              dentistId: primaryClinic.dentistId, 
+              email: normalizedEmail, 
+              clinicName: primaryClinic.clinicName,
+              ownerId: user.id
+            },
             process.env.JWT_SECRET,
             { expiresIn: "30d" }
         );
@@ -79,13 +135,13 @@ router.post("/signup", async (req, res) => {
             success: true,
             token,
             dentist: {
-                dentistId,
-                email,
-                clinicName,
+                dentistId: primaryClinic.dentistId,
+                email: normalizedEmail,
+                clinicName: primaryClinic.clinicName,
+                clinics: createdClinics
             },
             nextSteps: {
                 connectCalendar: "/setup",
-                installSlack: slackInviteUrl,
                 addKnowledge: "/knowledge",
             },
         });
@@ -122,7 +178,7 @@ router.post("/login", async (req, res) => {
                 return res.status(401).json({ error: "Incorrect password" });
             }
         } else {
-            // Auto-setup password for legacy database records that have no stored password hash
+            // Auto-setup password for legacy database records
             const newHash = await bcrypt.hash(password, 10);
             await updateDentist(dentist.id, {
                 PasswordHash: newHash
@@ -130,8 +186,16 @@ router.post("/login", async (req, res) => {
             console.log(`[Auth] Auto-set password hash for legacy dentist ${dentist.fields.Email}`);
         }
 
+        const { getClinicsByOwnerId } = require("../services/database");
+        const clinicsList = await getClinicsByOwnerId(dentist.fields.OwnerID);
+
         const token = jwt.sign(
-            { dentistId: dentist.fields.DentistID, email: dentist.fields.Email },
+            { 
+              dentistId: dentist.fields.DentistID, 
+              email: dentist.fields.Email,
+              clinicName: dentist.fields.ClinicName,
+              ownerId: dentist.fields.OwnerID
+            },
             process.env.JWT_SECRET,
             { expiresIn: "30d" }
         );
@@ -143,6 +207,11 @@ router.post("/login", async (req, res) => {
                 dentistId: dentist.fields.DentistID,
                 email: dentist.fields.Email,
                 clinicName: dentist.fields.ClinicName,
+                clinics: clinicsList.map(c => ({
+                    dentistId: c.fields.DentistID,
+                    clinicName: c.fields.ClinicName,
+                    address: c.fields.ClinicAddress
+                }))
             },
         });
     } catch (err) {

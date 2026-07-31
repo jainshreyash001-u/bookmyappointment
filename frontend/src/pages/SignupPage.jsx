@@ -1,24 +1,79 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bot, Mail, Lock, ArrowRight, User, Phone, Globe, ShieldCheck } from 'lucide-react';
+import { Bot, Mail, Lock, ArrowRight, ArrowLeft, User, Phone, MapPin, Globe, ShieldCheck } from 'lucide-react';
 
 const SignupPage = () => {
   const navigate = useNavigate();
+  const [step, setStep] = useState(1);
+  const [clinicCount, setClinicCount] = useState(1);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    clinic: '',
-    phone: '',
     password: '',
     plan: 'starter'
   });
+  const [clinics, setClinics] = useState([
+    { clinicName: '', phoneNumber: '', address: '' }
+  ]);
+
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const handleClinicCountChange = (count) => {
+    setClinicCount(count);
+    setClinics((prev) => {
+      const arr = [...prev];
+      if (count > prev.length) {
+        for (let i = prev.length; i < count; i++) {
+          arr.push({ clinicName: '', phoneNumber: '', address: '' });
+        }
+      } else {
+        arr.splice(count);
+      }
+      return arr;
+    });
+  };
+
+  const handleClinicChange = (index, field, value) => {
+    setClinics((prev) => {
+      const arr = [...prev];
+      arr[index] = { ...arr[index], [field]: value };
+      return arr;
+    });
+  };
+
+  const handleNextStep = (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    if (!formData.name || !formData.email || !formData.password) {
+      setErrorMsg('Please fill in all doctor account details.');
+      return;
+    }
+    setStep(2);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
+
+    // Validate clinic fields
+    for (let i = 0; i < clinics.length; i++) {
+      const c = clinics[i];
+      if (!c.clinicName || !c.phoneNumber || !c.address) {
+        setErrorMsg(`Please fill in all details for Clinic #${i + 1}.`);
+        return;
+      }
+    }
+
+    // Validate address uniqueness in payload
+    const addresses = clinics.map(c => c.address.trim().toLowerCase());
+    const uniqueAddresses = new Set(addresses);
+    if (uniqueAddresses.size !== addresses.length) {
+      setErrorMsg("Each clinic must have a unique physical address.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -28,11 +83,10 @@ const SignupPage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: formData.email,
-          clinicName: formData.clinic,
-          phoneNumber: formData.phone,
           password: formData.password,
-          workingHours: {},
-          slackMode: 'none'
+          doctorName: formData.name,
+          slackMode: 'none',
+          clinics: clinics
         })
       });
 
@@ -41,6 +95,8 @@ const SignupPage = () => {
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('userPlan', formData.plan);
         localStorage.setItem('dentistId', data.dentist.dentistId);
+        // Persist clinics array for clinic switcher
+        localStorage.setItem('clinicsList', JSON.stringify(data.dentist.clinics || []));
         navigate('/onboarding');
       } else {
         setErrorMsg(data.error || 'Registration failed');
@@ -80,109 +136,185 @@ const SignupPage = () => {
               {errorMsg}
             </div>
           )}
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80 ml-1">Full Name</label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0a2540]/40" />
-                  <input 
-                    type="text" required placeholder="Dr. Shreyash Jain"
-                    className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-4 pl-12 pr-6 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none transition-all"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  />
-                </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80 ml-1">Clinic Name</label>
-                <div className="relative">
-                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0a2540]/40" />
-                  <input 
-                    type="text" required placeholder="Precision Dental Care"
-                    className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-4 pl-12 pr-6 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none transition-all"
-                    value={formData.clinic}
-                    onChange={(e) => setFormData({...formData, clinic: e.target.value})}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80 ml-1">Work Email</label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0a2540]/40" />
-                  <input 
-                    type="email" required placeholder="shreyash@clinic.com"
-                    className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-4 pl-12 pr-6 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none transition-all"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80 ml-1">WhatsApp Number</label>
-                <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0a2540]/40" />
-                  <input 
-                    type="tel" required placeholder="+91 9999999999"
-                    className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-4 pl-12 pr-6 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none transition-all"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80 ml-1">Secure Password</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0a2540]/40" />
-                <input 
-                  type="password" required placeholder="••••••••••••"
-                  className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-4 pl-12 pr-6 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none transition-all"
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4 pt-4 border-t border-gray-100">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80 ml-1">Select Your Intelligence Level</label>
-              <div className="grid grid-cols-2 gap-4">
-                <div 
-                  onClick={() => setFormData({...formData, plan: 'starter'})}
-                  className={`cursor-pointer p-4 rounded-2xl border transition-all ${formData.plan === 'starter' ? 'bg-[#10b981]/5 border-[#10b981] text-[#10b981]' : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300'}`}
-                >
-                  <div className="text-xs font-black uppercase mb-1">Starter Pack</div>
-                  <div className="text-lg font-black text-[#0a2540]">₹499<span className="text-[10px] text-gray-400 font-bold">/mo</span></div>
-                </div>
-                <div 
-                  onClick={() => setFormData({...formData, plan: 'pro'})}
-                  className={`cursor-pointer p-4 rounded-2xl border relative transition-all ${formData.plan === 'pro' ? 'bg-[#0a2540]/5 border-[#0a2540] text-[#0a2540]' : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300'}`}
-                >
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-[#0a2540] text-white text-[8px] font-black tracking-widest uppercase rounded-full">PRO</div>
-                  <div className="text-xs font-black uppercase mb-1">Professional</div>
-                  <div className="text-lg font-black text-[#0a2540]">₹999<span className="text-[10px] text-gray-400 font-bold">/mo</span></div>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4">
-              <button 
-                type="submit" 
-                disabled={loading} 
-                className="clinical-btn-primary w-full py-4 text-xs tracking-wider uppercase font-black flex items-center justify-center gap-3 disabled:opacity-50"
+          <AnimatePresence mode="wait">
+            {step === 1 ? (
+              <motion.form 
+                key="step1"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                onSubmit={handleNextStep} 
+                className="space-y-8"
               >
-                {loading ? 'INITIALIZING...' : 'INITIALIZE DEPLOYMENT'}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-              <p className="text-[10px] text-center text-gray-400 mt-6 font-bold tracking-widest uppercase">
-                BY SIGNING UP, YOU AGREE TO OUR <a href="#" className="text-[#10b981] underline">TERMS OF SERVICE</a>
-              </p>
-            </div>
-          </form>
+                <div className="text-sm font-black uppercase tracking-widest text-[#10b981] mb-2">Step 1 of 2: Doctor Profile</div>
+                
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80 ml-1">Doctor Name</label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0a2540]/40" />
+                      <input 
+                        type="text" required placeholder="Dr. Shreyash Jain"
+                        className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-4 pl-12 pr-6 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none transition-all"
+                        value={formData.name}
+                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80 ml-1">Work Email</label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0a2540]/40" />
+                      <input 
+                        type="email" required placeholder="doctor@clinic.com"
+                        className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-4 pl-12 pr-6 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none transition-all"
+                        value={formData.email}
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80 ml-1">Secure Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0a2540]/40" />
+                      <input 
+                        type="password" required placeholder="••••••••••••"
+                        className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-4 pl-12 pr-6 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none transition-all"
+                        value={formData.password}
+                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80 ml-1">Clinics to Register</label>
+                    <div className="relative">
+                      <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0a2540]/40" />
+                      <select 
+                        className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl py-4 pl-12 pr-6 text-sm font-medium focus:bg-white focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none transition-all appearance-none"
+                        value={clinicCount}
+                        onChange={(e) => handleClinicCountChange(parseInt(e.target.value))}
+                      >
+                        {[1, 2, 3, 4, 5].map(n => (
+                          <option key={n} value={n}>{n} Clinic{n > 1 ? 's' : ''}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-gray-100">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/80 ml-1">Select Your Intelligence Level</label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div 
+                      onClick={() => setFormData({...formData, plan: 'starter'})}
+                      className={`cursor-pointer p-4 rounded-2xl border transition-all ${formData.plan === 'starter' ? 'bg-[#10b981]/5 border-[#10b981] text-[#10b981]' : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                    >
+                      <div className="text-xs font-black uppercase mb-1">Starter Pack</div>
+                      <div className="text-lg font-black text-[#0a2540]">₹499<span className="text-[10px] text-gray-400 font-bold">/mo</span></div>
+                    </div>
+                    <div 
+                      onClick={() => setFormData({...formData, plan: 'pro'})}
+                      className={`cursor-pointer p-4 rounded-2xl border relative transition-all ${formData.plan === 'pro' ? 'bg-[#0a2540]/5 border-[#0a2540] text-[#0a2540]' : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                    >
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-[#0a2540] text-white text-[8px] font-black tracking-widest uppercase rounded-full">PRO</div>
+                      <div className="text-xs font-black uppercase mb-1">Professional</div>
+                      <div className="text-lg font-black text-[#0a2540]">₹999<span className="text-[10px] text-gray-400 font-bold">/mo</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button 
+                    type="submit" 
+                    className="clinical-btn-primary w-full py-4 text-xs tracking-wider uppercase font-black flex items-center justify-center gap-3"
+                  >
+                    CONTINUE TO CLINICS
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </motion.form>
+            ) : (
+              <motion.form 
+                key="step2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                onSubmit={handleSubmit} 
+                className="space-y-8"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <div className="text-sm font-black uppercase tracking-widest text-[#10b981]">Step 2 of 2: Clinic Locations</div>
+                  <button 
+                    type="button" 
+                    onClick={() => setStep(1)}
+                    className="text-xs font-bold text-gray-400 hover:text-[#0a2540] flex items-center gap-1.5 transition-colors"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" /> Back
+                  </button>
+                </div>
+
+                <div className="space-y-8 max-h-[420px] overflow-y-auto pr-2">
+                  {clinics.map((clinic, index) => (
+                    <div key={index} className="p-6 bg-gray-50/50 border border-gray-100 rounded-3xl space-y-4">
+                      <div className="text-[11px] font-black uppercase tracking-widest text-[#0a2540]/60">Clinic #{index + 1}</div>
+                      
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Clinic Name</label>
+                          <input 
+                            type="text" required placeholder="Downtown Dental"
+                            className="w-full bg-white border border-gray-200 rounded-xl py-3 px-4 text-xs font-semibold focus:border-[#10b981] outline-none transition-all"
+                            value={clinic.clinicName}
+                            onChange={(e) => handleClinicChange(index, 'clinicName', e.target.value)}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">WhatsApp Line</label>
+                          <input 
+                            type="tel" required placeholder="+91 98765 43210"
+                            className="w-full bg-white border border-gray-200 rounded-xl py-3 px-4 text-xs font-semibold focus:border-[#10b981] outline-none transition-all"
+                            value={clinic.phoneNumber}
+                            onChange={(e) => handleClinicChange(index, 'phoneNumber', e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Physical Address (Location Key)</label>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <input 
+                            type="text" required placeholder="4th Floor, Apex Mall, MG Road, Mumbai"
+                            className="w-full bg-white border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-xs font-semibold focus:border-[#10b981] outline-none transition-all"
+                            value={clinic.address}
+                            onChange={(e) => handleClinicChange(index, 'address', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-4">
+                  <button 
+                    type="submit" 
+                    disabled={loading} 
+                    className="clinical-btn-primary w-full py-4 text-xs tracking-wider uppercase font-black flex items-center justify-center gap-3 disabled:opacity-50"
+                  >
+                    {loading ? 'INITIALIZING DEPLOYMENTS...' : 'INITIALIZE ALL DEPLOYMENTS'}
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </motion.form>
+            )}
+          </AnimatePresence>
 
           <div className="mt-10 pt-8 border-t border-gray-100 text-center">
             <p className="text-gray-500 text-xs font-bold tracking-tight">

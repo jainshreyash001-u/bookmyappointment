@@ -13,6 +13,8 @@ const Layout = () => {
     { name: 'Pricing', path: '/pricing' }
   ];
 
+  const activeClinicId = localStorage.getItem('activeClinicId') || localStorage.getItem('dentistId') || 'DT_DEMO';
+
   return (
     <div className="min-h-screen relative text-[#0a2540] selection:bg-[#10b981]/20">
       {/* Light Clinical Mesh Background */}
@@ -25,7 +27,7 @@ const Layout = () => {
       {/* Main Content Area */}
       <main className="relative z-10 min-h-[calc(100vh-350px)] pt-20">
         <Outlet />
-        <ChatWidget dentistId="DT_DEMO" />
+        <ChatWidget dentistId={activeClinicId} />
       </main>
 
       {/* Professional B2B Footer */}

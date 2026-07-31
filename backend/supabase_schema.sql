@@ -1,14 +1,37 @@
+-- ==========================================
+-- Migration & Schema Reset for Multi-Clinic Support
+-- Paste and run this script in your Supabase SQL Editor.
+-- WARNING: This will drop old tables and create the new schema.
+-- ==========================================
+
+-- Drop legacy tables if they exist
+drop table if exists appointments cascade;
+drop table if exists patients cascade;
+drop table if exists dentist_knowledge cascade;
+drop table if exists dentists cascade;
+drop table if exists dentist_users cascade;
+
 -- 1. Enable pgvector extension
 create extension if not exists vector;
 
--- 2. DENTISTS Table
-create table if not exists dentists (
+-- 2. DENTIST USERS Table (Auth and Doctor Profile)
+create table dentist_users (
     id uuid default gen_random_uuid() primary key,
-    dentist_id text unique not null,
-    name text,
-    clinic_name text,
     email text unique not null,
-    whatsapp_number text,
+    password_hash text not null,
+    name text, -- Doctor's professional name
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- 3. DENTISTS (CLINICS) Table (Each location/bot configuration)
+create table dentists (
+    id uuid default gen_random_uuid() primary key,
+    dentist_id text unique not null, -- Unique clinic code (e.g. DT_A1B2C3D4)
+    owner_id uuid references dentist_users(id) on delete cascade, -- Link to user account
+    name text, -- Clinic name
+    clinic_name text, -- Clinic name (legacy duplicate)
+    email text, -- Contact email (not unique)
+    whatsapp_number text, -- WhatsApp number
     working_hours jsonb default '{}'::jsonb,
     subscription_status text default 'trial',
     trial_ends_at timestamp with time zone,
@@ -16,12 +39,12 @@ create table if not exists dentists (
     slack_webhook text,
     google_calendar_token jsonb default '{}'::jsonb,
     google_calendar_id text default 'primary',
-    clinic_address text,
+    clinic_address text, -- Clinic address (the primary differentiator)
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- 3. PATIENTS Table
-create table if not exists patients (
+-- 4. PATIENTS Table
+create table patients (
     id uuid default gen_random_uuid() primary key,
     dentist_id text references dentists(dentist_id) on delete cascade,
     phone_number text not null,
@@ -33,8 +56,8 @@ create table if not exists patients (
     unique(dentist_id, phone_number)
 );
 
--- 4. APPOINTMENTS Table
-create table if not exists appointments (
+-- 5. APPOINTMENTS Table
+create table appointments (
     id uuid default gen_random_uuid() primary key,
     dentist_id text references dentists(dentist_id) on delete cascade,
     patient_name text,
@@ -49,18 +72,18 @@ create table if not exists appointments (
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- 5. DENTIST KNOWLEDGE Table (Replacing Pinecone, using 384 dimensions for MiniLM)
-create table if not exists dentist_knowledge (
+-- 6. DENTIST KNOWLEDGE Table
+create table dentist_knowledge (
     id uuid default gen_random_uuid() primary key,
     dentist_id text references dentists(dentist_id) on delete cascade,
     type text default 'general',
     title text,
     content text,
-    embedding vector(384), -- 384 dimensions for all-MiniLM-L6-v2
+    embedding vector(384),
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- 6. Create RAG Search Matching Function
+-- 7. Create RAG Search Matching Function
 create or replace function match_knowledge (
   query_embedding vector(384),
   match_threshold float,

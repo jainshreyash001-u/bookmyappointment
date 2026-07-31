@@ -23,10 +23,14 @@ const DashboardPage = () => {
     const fetchDashboardData = async () => {
       try {
         const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+        const currentClinic = localStorage.getItem('activeClinicId') || localStorage.getItem('dentistId');
         
         // Fetch Profile
         const profileRes = await fetch(`${API_BASE}/api/dentist/profile`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'X-Clinic-ID': currentClinic
+          }
         });
         
         if (profileRes.status === 401 || profileRes.status === 404) {
@@ -43,7 +47,10 @@ const DashboardPage = () => {
 
         // Fetch Appointments
         const apptsRes = await fetch(`${API_BASE}/api/dentist/appointments`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'X-Clinic-ID': currentClinic
+          }
         });
 
         if (apptsRes.status === 401 || apptsRes.status === 404) {

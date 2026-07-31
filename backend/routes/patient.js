@@ -6,7 +6,7 @@
 const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
-const { getPatient, upsertPatient } = require("../services/database");
+const { getPatient } = require("../services/database");
 const supabase = require("../services/supabaseClient");
 
 function auth(req, res, next) {
@@ -15,6 +15,8 @@ function auth(req, res, next) {
 
     try {
         req.dentist = jwt.verify(token, process.env.JWT_SECRET);
+        // Set active clinic ID (prioritize X-Clinic-ID header if present)
+        req.clinicId = req.headers["x-clinic-id"] || req.dentist.dentistId;
         next();
     } catch {
         res.status(401).json({ error: "Invalid token" });
@@ -27,7 +29,7 @@ router.get("/list", auth, async (req, res) => {
         const { data, error } = await supabase
             .from("patients")
             .select()
-            .eq("dentist_id", req.dentist.dentistId)
+            .eq("dentist_id", req.clinicId)
             .order("last_contact", { ascending: false });
 
         if (error) throw error;
@@ -51,7 +53,7 @@ router.get("/list", auth, async (req, res) => {
 // GET /api/patient/:phone
 router.get("/:phone", auth, async (req, res) => {
     try {
-        const patient = await getPatient(req.dentist.dentistId, req.params.phone);
+        const patient = await getPatient(req.clinicId, req.params.phone);
 
         if (!patient) {
             return res.status(404).json({ error: "Patient not found" });

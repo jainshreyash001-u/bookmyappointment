@@ -15,7 +15,6 @@ const {
 const { getAuthUrl } = require("../services/calendar");
 const {
     upsertDentistKnowledge,
-    queryDentistKnowledge,
 } = require("../services/knowledge");
 
 // Auth middleware
@@ -25,6 +24,8 @@ function auth(req, res, next) {
 
     try {
         req.dentist = jwt.verify(token, process.env.JWT_SECRET);
+        // Set active clinic ID (prioritize X-Clinic-ID header if present)
+        req.clinicId = req.headers["x-clinic-id"] || req.dentist.dentistId;
         next();
     } catch {
         res.status(401).json({ error: "Invalid token" });
@@ -34,12 +35,12 @@ function auth(req, res, next) {
 // GET /api/dentist/profile
 router.get("/profile", auth, async (req, res) => {
     try {
-        const dentist = await getDentistById(req.dentist.dentistId);
+        const dentist = await getDentistById(req.clinicId);
         if (!dentist) return res.status(404).json({ error: "Dentist not found" });
 
         res.json({
             dentistId: dentist.fields.DentistID,
-            name: dentist.fields.Name,
+            name: dentist.fields.DoctorName || dentist.fields.Name,
             clinicName: dentist.fields.ClinicName,
             email: dentist.fields.Email,
             phoneNumber: dentist.fields.WhatsAppNumber,
@@ -66,11 +67,11 @@ router.patch("/profile", auth, async (req, res) => {
     const { name, clinicName, workingHours, clinicAddress } = req.body;
 
     try {
-        const dentist = await getDentistById(req.dentist.dentistId);
+        const dentist = await getDentistById(req.clinicId);
         if (!dentist) return res.status(404).json({ error: "Dentist not found" });
 
         const fieldsToUpdate = {};
-        if (name !== undefined) fieldsToUpdate.Name = name;
+        if (name !== undefined) fieldsToUpdate.DoctorName = name;
         if (clinicName !== undefined) fieldsToUpdate.ClinicName = clinicName;
         if (workingHours !== undefined) fieldsToUpdate.WorkingHours = JSON.stringify(workingHours);
         if (clinicAddress !== undefined) fieldsToUpdate.ClinicAddress = clinicAddress;
@@ -82,10 +83,83 @@ router.patch("/profile", auth, async (req, res) => {
     }
 });
 
+// GET /api/dentist/clinics (List all clinics for switcher)
+router.get("/clinics", auth, async (req, res) => {
+    try {
+        const { getClinicsByOwnerId } = require("../services/database");
+        const clinics = await getClinicsByOwnerId(req.dentist.ownerId);
+        res.json({
+            success: true,
+            clinics: clinics.map((c) => ({
+                dentistId: c.fields.DentistID,
+                clinicName: c.fields.ClinicName,
+                address: c.fields.ClinicAddress,
+                phoneNumber: c.fields.WhatsAppNumber,
+            })),
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/dentist/clinics (Register additional clinic)
+router.post("/clinics", auth, async (req, res) => {
+    const { clinicName, phoneNumber, workingHours, address } = req.body;
+    if (!clinicName || !address) {
+        return res.status(400).json({ error: "Clinic name and address are required" });
+    }
+
+    try {
+        const { createDentist } = require("../services/database");
+        const { v4: uuidv4 } = require("uuid");
+
+        // Validate address is unique in database
+        const { data: existingClinic } = await supabase
+            .from("dentists")
+            .select("id")
+            .eq("clinic_address", address.trim())
+            .maybeSingle();
+
+        if (existingClinic) {
+            return res.status(400).json({ error: `A clinic is already registered at this address: "${address.trim()}"` });
+        }
+
+        const dentistId = `DT_${uuidv4().substring(0, 8).toUpperCase()}`;
+
+        await createDentist({
+            DentistID: dentistId,
+            OwnerID: req.dentist.ownerId,
+            Name: clinicName,
+            ClinicName: clinicName,
+            Email: req.dentist.email,
+            WhatsAppNumber: phoneNumber,
+            WorkingHours: JSON.stringify(workingHours || {}),
+            SubscriptionStatus: "trial",
+            TrialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+            SlackNotificationMode: "none",
+            ClinicAddress: address,
+        });
+
+        const { initializeDentistNamespace } = require("../services/knowledge");
+        await initializeDentistNamespace(dentistId);
+
+        res.json({
+            success: true,
+            clinic: {
+                dentistId,
+                clinicName,
+                address,
+            },
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // GET /api/dentist/appointments
 router.get("/appointments", auth, async (req, res) => {
     try {
-        const appointments = await getAppointmentsByDentist(req.dentist.dentistId);
+        const appointments = await getAppointmentsByDentist(req.clinicId);
 
         res.json({
             total: appointments.length,
@@ -122,7 +196,7 @@ router.post("/knowledge", auth, async (req, res) => {
             text: e.description,
         }));
 
-        await upsertDentistKnowledge(req.dentist.dentistId, docs);
+        await upsertDentistKnowledge(req.clinicId, docs);
 
         res.json({
             success: true,
@@ -139,7 +213,7 @@ router.get("/knowledge", auth, async (req, res) => {
         const { data, error } = await supabase
             .from("dentist_knowledge")
             .select("id, type, title, content")
-            .eq("dentist_id", req.dentist.dentistId);
+            .eq("dentist_id", req.clinicId);
 
         if (error) throw error;
 
@@ -156,7 +230,7 @@ router.delete("/knowledge/:id", auth, async (req, res) => {
             .from("dentist_knowledge")
             .delete()
             .eq("id", req.params.id)
-            .eq("dentist_id", req.dentist.dentistId);
+            .eq("dentist_id", req.clinicId);
 
         if (error) throw error;
 
@@ -169,7 +243,7 @@ router.delete("/knowledge/:id", auth, async (req, res) => {
 // GET /api/dentist/calendar-url
 router.get("/calendar-url", auth, async (req, res) => {
     try {
-        const url = getAuthUrl(req.dentist.dentistId);
+        const url = getAuthUrl(req.clinicId);
         res.json({ authUrl: url });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -179,8 +253,8 @@ router.get("/calendar-url", auth, async (req, res) => {
 // GET /api/dentist/upcoming
 router.get("/upcoming", auth, async (req, res) => {
     try {
-        const dentist = await getDentistById(req.dentist.dentistId);
-        const appointments = await getAppointmentsByDentist(req.dentist.dentistId);
+        const dentist = await getDentistById(req.clinicId);
+        const appointments = await getAppointmentsByDentist(req.clinicId);
 
         const upcoming = appointments
             .filter(
@@ -199,7 +273,7 @@ router.get("/upcoming", auth, async (req, res) => {
 // POST /api/dentist/test-whatsapp
 router.post("/test-whatsapp", auth, async (req, res) => {
     try {
-        const dentist = await getDentistById(req.dentist.dentistId);
+        const dentist = await getDentistById(req.clinicId);
         if (!dentist) return res.status(404).json({ error: "Dentist not found" });
 
         const phoneNumber = dentist.fields.WhatsAppNumber;
@@ -226,7 +300,7 @@ router.post("/test-whatsapp", auth, async (req, res) => {
 // POST /api/dentist/disconnect-calendar
 router.post("/disconnect-calendar", auth, async (req, res) => {
     try {
-        const dentist = await getDentistById(req.dentist.dentistId);
+        const dentist = await getDentistById(req.clinicId);
         if (!dentist) return res.status(404).json({ error: "Dentist not found" });
 
         await updateDentist(dentist.id, {

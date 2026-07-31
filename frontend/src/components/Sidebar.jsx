@@ -15,6 +15,17 @@ const Sidebar = ({ handleLogout }) => {
   const [clinicAddress, setClinicAddress] = useState('');
   const [operatingHours, setOperatingHours] = useState('');
 
+  // Switcher & Clinics state
+  const [clinicsList, setClinicsList] = useState([]);
+  const [activeClinicId, setActiveClinicId] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // Add Clinic modal state
+  const [isAddClinicOpen, setIsAddClinicOpen] = useState(false);
+  const [newClinicName, setNewClinicName] = useState('');
+  const [newClinicPhone, setNewClinicPhone] = useState('');
+  const [newClinicAddress, setNewClinicAddress] = useState('');
+
   // Knowledge list & fields state
   const [knowledgeList, setKnowledgeList] = useState([]);
   const [newTitle, setNewTitle] = useState('');
@@ -35,15 +46,40 @@ const Sidebar = ({ handleLogout }) => {
     { name: 'Status', icon: Activity, path: '/status' }
   ];
 
+  const fetchClinicsList = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const res = await fetch(`${API_BASE}/api/dentist/clinics`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setClinicsList(data.clinics || []);
+        localStorage.setItem('clinicsList', JSON.stringify(data.clinics || []));
+      } else {
+        const stored = localStorage.getItem('clinicsList');
+        if (stored) setClinicsList(JSON.parse(stored));
+      }
+    } catch (err) {
+      const stored = localStorage.getItem('clinicsList');
+      if (stored) setClinicsList(JSON.parse(stored));
+    }
+  };
+
   // Fetch settings details
   const fetchSettingsData = async () => {
     try {
       const token = localStorage.getItem('authToken');
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const currentClinic = localStorage.getItem('activeClinicId') || localStorage.getItem('dentistId');
       
       // Get Dentist Profile details
       const profileRes = await fetch(`${API_BASE}/api/dentist/profile`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'X-Clinic-ID': currentClinic
+        }
       });
       if (profileRes.ok) {
         const profileData = await profileRes.json();
@@ -55,7 +91,10 @@ const Sidebar = ({ handleLogout }) => {
 
       // Get Dentist Knowledge entries
       const knowledgeRes = await fetch(`${API_BASE}/api/dentist/knowledge`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'X-Clinic-ID': currentClinic
+        }
       });
       if (knowledgeRes.ok) {
         const knowledgeData = await knowledgeRes.json();
@@ -67,12 +106,67 @@ const Sidebar = ({ handleLogout }) => {
   };
 
   useEffect(() => {
+    fetchClinicsList();
+    const active = localStorage.getItem('activeClinicId') || localStorage.getItem('dentistId');
+    setActiveClinicId(active);
+  }, []);
+
+  useEffect(() => {
     if (isSettingsOpen || isProfileOpen) {
       fetchSettingsData();
       setErrorMsg('');
       setSuccessMsg('');
     }
   }, [isSettingsOpen, isProfileOpen]);
+
+  const handleSwitchClinic = (clinicId) => {
+    localStorage.setItem('activeClinicId', clinicId);
+    setActiveClinicId(clinicId);
+    window.location.reload();
+  };
+
+  const handleAddClinicSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const res = await fetch(`${API_BASE}/api/dentist/clinics`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          clinicName: newClinicName,
+          phoneNumber: newClinicPhone,
+          address: newClinicAddress
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to register clinic');
+      }
+
+      setSuccessMsg('Clinic registered successfully!');
+      setNewClinicName('');
+      setNewClinicPhone('');
+      setNewClinicAddress('');
+      setIsAddClinicOpen(false);
+
+      // Set active and refresh
+      localStorage.setItem('activeClinicId', data.clinic.dentistId);
+      window.location.reload();
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Profile Update Handler
   const handleUpdateProfile = async (e) => {
@@ -84,12 +178,14 @@ const Sidebar = ({ handleLogout }) => {
     try {
       const token = localStorage.getItem('authToken');
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const currentClinic = localStorage.getItem('activeClinicId') || localStorage.getItem('dentistId');
       
       const res = await fetch(`${API_BASE}/api/dentist/profile`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'X-Clinic-ID': currentClinic
         },
         body: JSON.stringify({
           name: doctorName,
@@ -127,12 +223,14 @@ const Sidebar = ({ handleLogout }) => {
     try {
       const token = localStorage.getItem('authToken');
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const currentClinic = localStorage.getItem('activeClinicId') || localStorage.getItem('dentistId');
       
       const res = await fetch(`${API_BASE}/api/dentist/knowledge`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'X-Clinic-ID': currentClinic
         },
         body: JSON.stringify({
           entries: [{
@@ -154,7 +252,10 @@ const Sidebar = ({ handleLogout }) => {
 
       // Refresh list
       const knowledgeRes = await fetch(`${API_BASE}/api/dentist/knowledge`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'X-Clinic-ID': currentClinic
+        }
       });
       if (knowledgeRes.ok) {
         const knowledgeData = await knowledgeRes.json();
@@ -180,10 +281,14 @@ const Sidebar = ({ handleLogout }) => {
     try {
       const token = localStorage.getItem('authToken');
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const currentClinic = localStorage.getItem('activeClinicId') || localStorage.getItem('dentistId');
       
       const res = await fetch(`${API_BASE}/api/dentist/knowledge/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'X-Clinic-ID': currentClinic
+        }
       });
 
       const data = await res.json();
@@ -252,10 +357,76 @@ const Sidebar = ({ handleLogout }) => {
     }
   };
 
+  const activeClinic = clinicsList.find(c => c.dentistId === activeClinicId);
+
   return (
     <>
       <aside className="w-72 border-r border-gray-100 p-8 hidden lg:block bg-gray-50/50 font-sans">
-        <div className="space-y-12">
+        <div className="space-y-8">
+          {/* Clinic Switcher */}
+          <div className="space-y-4">
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/60">ACTIVE CLINIC</h4>
+            <div className="relative">
+              <button 
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="w-full flex items-center justify-between gap-3 p-4 bg-white border border-gray-100 rounded-2xl hover:border-gray-200/80 transition-all shadow-sm text-left outline-none"
+              >
+                <div className="min-w-0">
+                  <span className="text-[9px] font-black text-[#10b981] uppercase tracking-widest block mb-0.5">Clinic Context</span>
+                  <span className="text-xs font-black text-[#0a2540] block truncate uppercase">
+                    {activeClinic ? activeClinic.clinicName : (clinicName || 'Loading Clinic...')}
+                  </span>
+                </div>
+                <div className="w-6 h-6 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500 shrink-0 text-[10px]">
+                  ▼
+                </div>
+              </button>
+
+              <AnimatePresence>
+                {isDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden py-2"
+                    >
+                      <div className="max-h-48 overflow-y-auto">
+                        {clinicsList.map(c => (
+                          <button
+                            key={c.dentistId}
+                            onClick={() => {
+                              handleSwitchClinic(c.dentistId);
+                              setIsDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-5 py-3 hover:bg-gray-50 transition-colors block border-b border-gray-50/60 last:border-0 ${c.dentistId === activeClinicId ? 'bg-[#10b981]/5 text-[#10b981]' : 'text-[#0a2540]'}`}
+                          >
+                            <div className="text-xs font-black uppercase truncate">{c.clinicName}</div>
+                            <div className="text-[9px] text-gray-400 font-semibold truncate mt-0.5 flex items-center gap-1">
+                              <MapPin className="w-2.5 h-2.5 shrink-0 text-gray-400" /> {c.address}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="p-2 border-t border-gray-100 mt-2">
+                        <button
+                          onClick={() => {
+                            setIsAddClinicOpen(true);
+                            setIsDropdownOpen(false);
+                          }}
+                          className="w-full py-2 bg-gray-50 hover:bg-gray-100 rounded-xl text-[9px] font-black uppercase tracking-widest text-[#0a2540] transition-colors"
+                        >
+                          + Add New Clinic
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
           <div className="space-y-4">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/60">MANAGEMENT</h4>
             <nav className="space-y-2">
@@ -279,7 +450,7 @@ const Sidebar = ({ handleLogout }) => {
             </nav>
           </div>
 
-          <div className="pt-12 border-t border-gray-100 space-y-4">
+          <div className="pt-8 border-t border-gray-100 space-y-4">
             <button 
               onClick={() => setIsProfileOpen(true)}
               className="flex items-center gap-4 px-4 py-3 text-gray-500 hover:bg-gray-100/50 w-full rounded-xl transition-all font-black text-sm uppercase tracking-wider focus:outline-none"
@@ -298,6 +469,90 @@ const Sidebar = ({ handleLogout }) => {
           </div>
         </div>
       </aside>
+
+      {/* Add New Clinic Slide-up Panel */}
+      <AnimatePresence>
+        {isAddClinicOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAddClinicOpen(false)}
+              className="fixed inset-0 bg-[#0a2540]/40 backdrop-blur-sm z-50"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 max-h-[85vh] bg-white rounded-t-[32px] shadow-2xl border-t border-gray-100 z-50 overflow-y-auto flex flex-col font-sans"
+            >
+              <div className="flex justify-center pt-4 pb-2">
+                <div className="w-16 h-1.5 bg-gray-200 rounded-full" />
+              </div>
+              <div className="max-w-xl mx-auto w-full px-6 pb-12 pt-4">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="text-xl font-black uppercase tracking-tight text-[#0a2540]">Register Additional Clinic</h3>
+                    <p className="text-xs text-gray-500 font-semibold mt-0.5">Scale your operations under your existing doctor account</p>
+                  </div>
+                  <button
+                    onClick={() => setIsAddClinicOpen(false)}
+                    className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 focus:outline-none"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleAddClinicSubmit} className="space-y-6">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/60 mb-2 block">Clinic Name</label>
+                      <input
+                        type="text"
+                        value={newClinicName}
+                        onChange={(e) => setNewClinicName(e.target.value)}
+                        placeholder="e.g. Apex Dental Center"
+                        className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl px-5 py-4 text-sm font-semibold text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] focus:outline-none transition-all"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/60 mb-2 block">WhatsApp Number</label>
+                      <input
+                        type="tel"
+                        value={newClinicPhone}
+                        onChange={(e) => setNewClinicPhone(e.target.value)}
+                        placeholder="e.g. +91 99999 99999"
+                        className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl px-5 py-4 text-sm font-semibold text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] focus:outline-none transition-all"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/60 mb-2 block">Physical Address</label>
+                      <textarea
+                        value={newClinicAddress}
+                        onChange={(e) => setNewClinicAddress(e.target.value)}
+                        placeholder="e.g. Ground Floor, Sector 5, Salt Lake, Kolkata"
+                        className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl px-5 py-4 text-sm font-semibold text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] focus:outline-none transition-all h-20 resize-none"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-4 bg-[#0a2540] hover:bg-[#10b981] text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-md"
+                  >
+                    {loading ? 'Initializing Clinic...' : 'Register Clinic'}
+                  </button>
+                </form>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Profile slide-up panel */}
       <AnimatePresence>

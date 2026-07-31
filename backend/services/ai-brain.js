@@ -38,22 +38,42 @@ RESPONSE FORMAT - Return ONLY valid JSON:
 
 async function processMessage(dentistData, patientPhone, message) {
   try {
-    // Query knowledge base for relevant context
-    const knowledge = await queryDentistKnowledge(
-      dentistData.fields.DentistID,
-      message,
-      5
-    );
+    const clinics = Array.isArray(dentistData) ? dentistData : [dentistData];
+    const primaryClinic = clinics[0];
 
-    const context = knowledge
-      .map((k) => `${k.title}: ${k.text}`)
-      .join("\n\n");
+    const locationsInfo = clinics.map((c, index) => {
+      return `Clinic #${index + 1}:
+- Name: ${c.fields.ClinicName}
+- Address/Location: ${c.fields.ClinicAddress || "Main Location"}
+- Working Hours: ${c.fields.WorkingHours || "9 AM - 6 PM"}`;
+    }).join("\n\n");
 
-    const fullPrompt = `${SYSTEM_PROMPT}
+    // Query knowledge base for relevant context across all clinics
+    let context = "";
+    for (const clinic of clinics) {
+      const knowledge = await queryDentistKnowledge(
+        clinic.fields.DentistID,
+        message,
+        3
+      );
+      if (knowledge && knowledge.length > 0) {
+        context += `[Knowledge for ${clinic.fields.ClinicName} at ${clinic.fields.ClinicAddress || "Main Location"}]:\n` +
+          knowledge.map((k) => `- ${k.title}: ${k.content || k.text}`).join("\n") + "\n\n";
+      }
+    }
+
+    const multiLocationInstruction = clinics.length > 1
+      ? `\nCRITICAL: The patient is contacting a number linked to multiple clinic locations:
+${locationsInfo}
+If they haven't explicitly specified which clinic/location they want to book at (e.g. by clinic name or address/location), you MUST ask them:
+"Would you like to book at ${clinics.map(c => c.fields.ClinicName + " (" + (c.fields.ClinicAddress || "Main Location") + ")").join(" or ")}?"
+Do not assume or book until they specify.`
+      : "";
+
+    const fullPrompt = `${SYSTEM_PROMPT}${multiLocationInstruction}
 
 CLINIC INFORMATION:
-Clinic: ${dentistData.fields.ClinicName}
-Working Hours: ${dentistData.fields.WorkingHours || "9 AM - 6 PM"}
+${clinics.length === 1 ? `Clinic: ${primaryClinic.fields.ClinicName}\nWorking Hours: ${primaryClinic.fields.WorkingHours || "9 AM - 6 PM"}\nAddress: ${primaryClinic.fields.ClinicAddress || "Main Location"}` : locationsInfo}
 
 CLINIC KNOWLEDGE BASE:
 ${context || "No specific information available"}
@@ -82,8 +102,18 @@ Patient Message: ${message}`;
     // If booking requested, validate calendar
     if (response.appointmentData && response.appointmentData.dateTime) {
       try {
+        let selectedClinic = primaryClinic;
+        if (clinics.length > 1) {
+          const chosenText = ((response.appointmentData.service || "") + " " + (response.message || "")).toLowerCase();
+          const matched = clinics.find(c =>
+            chosenText.includes(c.fields.ClinicName.toLowerCase()) ||
+            (c.fields.ClinicAddress && chosenText.includes(c.fields.ClinicAddress.toLowerCase()))
+          );
+          if (matched) selectedClinic = matched;
+        }
+
         const tokens = JSON.parse(
-          dentistData.fields.GoogleCalendarToken || "{}"
+          selectedClinic.fields.GoogleCalendarToken || "{}"
         );
         if (tokens.access_token) {
           const isAvailable = await checkCalendarAvailability(
@@ -105,8 +135,18 @@ Patient Message: ${message}`;
 
     // If escalate needed, store for learning
     if (response.escalate && response.escalateReason) {
+      let selectedClinic = primaryClinic;
+      if (clinics.length > 1) {
+        const chosenText = (response.escalateReason || "").toLowerCase();
+        const matched = clinics.find(c =>
+          chosenText.includes(c.fields.ClinicName.toLowerCase()) ||
+          (c.fields.ClinicAddress && chosenText.includes(c.fields.ClinicAddress.toLowerCase()))
+        );
+        if (matched) selectedClinic = matched;
+      }
+
       await storeLearnedAnswer(
-        dentistData.fields.DentistID,
+        selectedClinic.fields.DentistID,
         message,
         response.escalateReason,
         "escalated"

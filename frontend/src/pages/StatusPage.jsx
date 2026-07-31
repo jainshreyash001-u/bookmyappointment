@@ -21,8 +21,12 @@ const StatusPage = () => {
         return;
       }
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const currentClinic = localStorage.getItem('activeClinicId') || localStorage.getItem('dentistId');
       const profileRes = await fetch(`${API_BASE}/api/dentist/profile`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'X-Clinic-ID': currentClinic
+        }
       });
       
       if (profileRes.status === 401 || profileRes.status === 404) {
@@ -57,8 +61,12 @@ const StatusPage = () => {
     try {
       const token = localStorage.getItem('authToken');
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const currentClinic = localStorage.getItem('activeClinicId') || localStorage.getItem('dentistId');
       const res = await fetch(`${API_BASE}/api/dentist/calendar-url`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'X-Clinic-ID': currentClinic
+        }
       });
       if (res.status === 401 || res.status === 404) {
         handleLogout();
@@ -74,8 +82,12 @@ const StatusPage = () => {
         // Poll dentist profile to check if calendarConnected becomes true
         const interval = setInterval(async () => {
           try {
+            const currentClinic = localStorage.getItem('activeClinicId') || localStorage.getItem('dentistId');
             const profileRes = await fetch(`${API_BASE}/api/dentist/profile`, {
-              headers: { Authorization: `Bearer ${token}` }
+              headers: { 
+                Authorization: `Bearer ${token}`,
+                'X-Clinic-ID': currentClinic
+              }
             });
             if (profileRes.status === 401 || profileRes.status === 404) {
               clearInterval(interval);
@@ -120,9 +132,13 @@ const StatusPage = () => {
     try {
       const token = localStorage.getItem('authToken');
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const currentClinic = localStorage.getItem('activeClinicId') || localStorage.getItem('dentistId');
       const res = await fetch(`${API_BASE}/api/dentist/disconnect-calendar`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'X-Clinic-ID': currentClinic
+        }
       });
       const data = await res.json();
       if (res.ok && data.success) {

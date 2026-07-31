@@ -21,18 +21,16 @@ router.post("/", async (req, res) => {
         const patientPhone = from.replace("whatsapp:", "");
         const clinicPhone = to.replace("whatsapp:", "");
 
-        // Find dentist by their WhatsApp number
-        // (For simplicity, using a mock finder or looking up by number in Database)
-        const { getDentistByWhatsAppNumber } = require("../services/database");
-        const dentist = await getDentistByWhatsAppNumber(clinicPhone);
+        const { getClinicsByWhatsAppNumber } = require("../services/database");
+        const clinics = await getClinicsByWhatsAppNumber(clinicPhone);
 
-        if (!dentist) {
+        if (!clinics || clinics.length === 0) {
             console.error(`[WhatsApp] Dentist not found for number ${clinicPhone}`);
             return res.send("OK");
         }
 
         // Process with AI Brain
-        const aiResponse = await processMessage(dentist, patientPhone, body);
+        const aiResponse = await processMessage(clinics, patientPhone, body);
 
         // Reply to patient
         await sendWhatsAppMessage(patientPhone, aiResponse.message);

@@ -101,6 +101,7 @@ const LoginPage = () => {
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('userPlan', data.dentist.plan || 'starter');
         localStorage.setItem('dentistId', data.dentist.dentistId);
+        localStorage.setItem('clinicsList', JSON.stringify(data.dentist.clinics || []));
         navigate('/dashboard');
       } else {
         setErrorMsg(data.error || 'Login failed');
