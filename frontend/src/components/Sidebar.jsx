@@ -6,11 +6,8 @@ const Sidebar = ({ handleLogout }) => {
   const location = useLocation();
 
   const menuItems = [
-    { name: 'Overview', icon: Activity, path: '/dashboard' },
-    { name: 'Queries', icon: MessageSquare, path: '/queries' },
-    { name: 'Appointments', icon: Calendar, path: '/dashboard' }, // Links to dashboard overview which lists appointments
-    { name: 'AI Brain', icon: Bot, path: '/dashboard' }, // Fallbacks to dashboard for demo
-    { name: 'Knowledge Base', icon: Settings, path: '/dashboard' }
+    { name: 'Dashboard', icon: Activity, path: '/dashboard' },
+    { name: 'Queries', icon: MessageSquare, path: '/queries' }
   ];
 
   return (
