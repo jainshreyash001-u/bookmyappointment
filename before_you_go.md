@@ -54,3 +54,17 @@ If you ever need to purge your backend database again to clear test data:
 ```bash
 node -e "require('dotenv').config(); const supabase = require('./services/supabaseClient'); async function clean() { await supabase.from('dentist_knowledge').delete().neq('id', '00000000-0000-0000-0000-000000000000'); await supabase.from('appointments').delete().neq('id', '00000000-0000-0000-0000-000000000000'); await supabase.from('patients').delete().neq('id', '00000000-0000-0000-0000-000000000000'); await supabase.from('dentists').delete().neq('id', '00000000-0000-0000-0000-000000000000'); console.log('DB Cleaned!'); } clean();"
 ```
+
+---
+
+## 4. WhatsApp Optimization: Switching to Meta Cloud API (For 90%+ Profit Margins)
+
+Currently, the webhook routing in `backend/routes/whatsapp.js` uses Twilio as the WhatsApp provider. Twilio charges a flat **$0.005 markup fee** on every incoming and outgoing message, which is your largest expense.
+
+To optimize operational costs and scale to high-volume messaging with 90%+ profit margins:
+1. **Switch to Meta Direct Cloud API**: Bypasses Twilio entirely. 
+2. **Utilize Meta's Free Tier**: Meta provides **1,000 free conversations per month** per WhatsApp Business Account (WABA). Under this free tier, your Meta conversation charges are **₹0**.
+3. **Migration Steps**:
+   - Refactor `backend/routes/whatsapp.js` to parse Meta's Graph API JSON payload (instead of Twilio's url-encoded form body).
+   - Replace the `twilio` client library with standard `axios` POST requests directed to `https://graph.facebook.com/v18.0/{phone_number_id}/messages` carrying your permanent Meta System User Access Token.
+
