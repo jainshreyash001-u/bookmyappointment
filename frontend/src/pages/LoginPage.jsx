@@ -58,7 +58,7 @@ const LoginPage = () => {
             <span className="text-2xl font-black tracking-tighter text-[#0a2540]">BMA <span className="text-[#10b981]">AI</span></span>
           </Link>
           <h1 className="text-4xl font-black tracking-tight uppercase text-[#0a2540]">WELCOME <span className="text-gradient-clinical">BACK</span></h1>
-          <p className="text-gray-500 font-medium mt-2">Initialize your clinical session.</p>
+          <p className="text-gray-500 font-medium mt-2">Login to your clinical account.</p>
         </div>
 
         <div className="clinical-card p-10 relative overflow-hidden">
@@ -106,14 +106,14 @@ const LoginPage = () => {
               disabled={loading}
               className="clinical-btn-primary w-full py-4 text-xs tracking-wider uppercase font-black flex items-center justify-center gap-3 disabled:opacity-50"
             >
-              {loading ? 'INITIALIZING...' : 'INITIALIZE SESSION'}
+              {loading ? 'LOGGING IN...' : 'LOGIN'}
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
 
           <div className="mt-8 pt-8 border-t border-gray-100 text-center">
             <p className="text-gray-500 text-xs font-bold tracking-tight">
-              Don't have an account? <Link to="/signup" className="text-[#10b981] hover:text-[#0d9668] transition-colors">Request Deployment</Link>
+              Don't have an account? <Link to="/signup" className="text-[#10b981] hover:text-[#0d9668] transition-colors">Sign Up</Link>
             </p>
           </div>
         </div>

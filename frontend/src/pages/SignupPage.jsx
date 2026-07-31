@@ -179,14 +179,14 @@ const SignupPage = () => {
                 <ArrowRight className="w-4 h-4" />
               </button>
               <p className="text-[10px] text-center text-gray-400 mt-6 font-bold tracking-widest uppercase">
-                BY INITIALIZING, YOU AGREE TO OUR <a href="#" className="text-[#10b981] underline">TERMS OF SERVICE</a>
+                BY SIGNING UP, YOU AGREE TO OUR <a href="#" className="text-[#10b981] underline">TERMS OF SERVICE</a>
               </p>
             </div>
           </form>
 
           <div className="mt-10 pt-8 border-t border-gray-100 text-center">
             <p className="text-gray-500 text-xs font-bold tracking-tight">
-              Already part of the network? <Link to="/login" className="text-[#10b981] hover:text-[#0d9668] transition-colors">Initialize Session</Link>
+              Already part of the network? <Link to="/login" className="text-[#10b981] hover:text-[#0d9668] transition-colors">Login</Link>
             </p>
           </div>
         </div>
