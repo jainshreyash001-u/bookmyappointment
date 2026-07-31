@@ -30,7 +30,7 @@ const LoginPage = () => {
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('userPlan', data.dentist.plan || 'starter');
         localStorage.setItem('dentistId', data.dentist.dentistId);
-        window.location.href = '/dashboard';
+        navigate('/dashboard');
       } else {
         setErrorMsg(data.error || 'Login failed');
       }
