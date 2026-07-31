@@ -9,8 +9,7 @@ require("dotenv").config();
 const axios = require("axios");
 const supabase = require("./services/supabaseClient");
 
-const PORT = process.env.PORT || 3001;
-const API_BASE = `http://localhost:${PORT}`;
+const API_BASE = process.argv[2] || "https://api.bookmyappointment.online";
 
 async function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

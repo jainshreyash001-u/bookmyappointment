@@ -12,8 +12,9 @@ const AdminLoginPage = () => {
   const handleInitialSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
+    const API_BASE = import.meta.env.VITE_API_BASE || 'https://api.bookmyappointment.online';
     try {
-      const res = await fetch('http://localhost:3001/api/admin/auth/step1', {
+      const res = await fetch(`${API_BASE}/api/admin/auth/step1`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email, password: formData.password })
@@ -32,8 +33,9 @@ const AdminLoginPage = () => {
   const handle2FASubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
+    const API_BASE = import.meta.env.VITE_API_BASE || 'https://api.bookmyappointment.online';
     try {
-      const res = await fetch('http://localhost:3001/api/admin/auth/step2', {
+      const res = await fetch(`${API_BASE}/api/admin/auth/step2`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: formData.code })

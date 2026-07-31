@@ -11,7 +11,7 @@
 
 const { chromium } = require("playwright");
 
-const TARGET_URL = process.argv[2] || "http://localhost:5173"; // Defaults to local Vite dev server
+const TARGET_URL = process.argv[2] || "https://bookmyappointment.online";
 const TEST_EMAIL = "shreyash.23bai10003@vitbhopal.ac.in";
 const TEST_PASSWORD = "test_password_123";
 
@@ -25,6 +25,10 @@ async function runBrowserTest() {
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
   const page = await context.newPage();
+
+  // Listen to browser console and errors
+  page.on('console', msg => console.log('   [Browser Console]', msg.text()));
+  page.on('pageerror', err => console.log('   [Browser JS Error]', err.message));
 
   try {
     // 1. Navigate to Login Page

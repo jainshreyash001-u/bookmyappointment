@@ -12,7 +12,7 @@ require("dotenv").config();
 const axios = require("axios");
 const supabase = require("./services/supabaseClient");
 
-const API_BASE = process.argv[2] || "http://localhost:3001";
+const API_BASE = process.argv[2] || "https://api.bookmyappointment.online";
 
 async function runTests() {
   console.log("==========================================");
