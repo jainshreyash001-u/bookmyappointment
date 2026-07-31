@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, MessageSquare, Activity, Settings, LogOut, X, Lock, CheckCircle2, AlertCircle, MapPin, Clock, FileText } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Activity, Settings, LogOut, X, Lock, CheckCircle2, AlertCircle, MapPin, Clock, FileText, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Sidebar = ({ handleLogout }) => {
@@ -9,6 +9,7 @@ const Sidebar = ({ handleLogout }) => {
   const [activeTab, setActiveTab] = useState('profile'); // 'profile', 'knowledge', 'password'
 
   // Profile fields state
+  const [doctorName, setDoctorName] = useState('');
   const [clinicName, setClinicName] = useState('');
   const [clinicAddress, setClinicAddress] = useState('');
   const [operatingHours, setOperatingHours] = useState('');
@@ -45,6 +46,7 @@ const Sidebar = ({ handleLogout }) => {
       });
       if (profileRes.ok) {
         const profileData = await profileRes.json();
+        setDoctorName(profileData.name || '');
         setClinicName(profileData.clinicName || '');
         setClinicAddress(profileData.clinicAddress || '');
         setOperatingHours(profileData.workingHours?.hours || '');
@@ -89,6 +91,7 @@ const Sidebar = ({ handleLogout }) => {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
+          name: doctorName,
           clinicName,
           clinicAddress,
           workingHours: { hours: operatingHours }
@@ -277,19 +280,19 @@ const Sidebar = ({ handleLogout }) => {
 
           <div className="pt-12 border-t border-gray-100 space-y-4">
             <button 
+              onClick={() => { setIsSettingsOpen(true); setActiveTab('profile'); }}
+              className="flex items-center gap-4 px-4 py-3 text-gray-500 hover:bg-gray-100/50 w-full rounded-xl transition-all font-black text-sm uppercase tracking-wider focus:outline-none"
+            >
+              <User className="w-5 h-5 shrink-0 text-gray-500" />
+              <span className="text-xs tracking-wider">Profile</span>
+            </button>
+
+            <button 
               onClick={() => setIsSettingsOpen(true)}
               className="flex items-center gap-4 px-4 py-3 text-gray-500 hover:bg-gray-100/50 w-full rounded-xl transition-all font-black text-sm uppercase tracking-wider focus:outline-none"
             >
               <Settings className="w-5 h-5 shrink-0 text-gray-500" />
               <span className="text-xs tracking-wider">Settings</span>
-            </button>
-
-            <button 
-              onClick={handleLogout}
-              className="flex items-center gap-4 px-4 py-3 text-red-500 hover:bg-red-50 w-full rounded-xl transition-all font-black text-sm uppercase tracking-wider focus:outline-none"
-            >
-              <LogOut className="w-5 h-5 shrink-0" />
-              <span className="text-xs tracking-wider">Logout</span>
             </button>
           </div>
         </div>
@@ -334,16 +337,25 @@ const Sidebar = ({ handleLogout }) => {
                     </h3>
                     <p className="text-xs text-gray-500 font-semibold mt-0.5">Manage your practice credentials and AI settings</p>
                   </div>
-                  <button
-                    onClick={() => {
-                      setIsSettingsOpen(false);
-                      setErrorMsg('');
-                      setSuccessMsg('');
-                    }}
-                    className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 focus:outline-none"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleLogout}
+                      className="px-4 py-2 rounded-xl bg-red-50 hover:bg-red-100 transition-all text-red-600 hover:text-red-700 text-xs font-black uppercase tracking-wider flex items-center gap-2 focus:outline-none shadow-sm"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Logout
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsSettingsOpen(false);
+                        setErrorMsg('');
+                        setSuccessMsg('');
+                      }}
+                      className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 focus:outline-none"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Tab selectors */}
@@ -409,6 +421,17 @@ const Sidebar = ({ handleLogout }) => {
                 {/* 1. Clinic Profile & Hours */}
                 {activeTab === 'profile' && (
                   <form onSubmit={handleUpdateProfile} className="space-y-6">
+                    {/* Doctor Name Top Display */}
+                    <div className="flex items-center gap-3 p-4 bg-gray-50 border border-gray-100 rounded-2xl shadow-sm">
+                      <div className="w-10 h-10 rounded-xl bg-[#0a2540] text-white flex items-center justify-center font-black text-sm shrink-0">
+                        DR
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Registered Doctor</span>
+                        <span className="text-sm font-black text-[#0a2540] uppercase tracking-wide">{doctorName || 'Not Set'}</span>
+                      </div>
+                    </div>
+
                     <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/30 flex items-start gap-4">
                       <Settings className="w-5 h-5 text-[#10b981] mt-0.5" />
                       <div>
@@ -418,6 +441,20 @@ const Sidebar = ({ handleLogout }) => {
                     </div>
 
                     <div className="space-y-4">
+                      <div>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/60 mb-2 block">
+                          Doctor Name
+                        </label>
+                        <input
+                          type="text"
+                          value={doctorName}
+                          onChange={(e) => setDoctorName(e.target.value)}
+                          placeholder="e.g. Dr. Shreyash Jain"
+                          className="w-full bg-gray-50 border border-gray-200/80 rounded-2xl px-5 py-4 text-sm font-semibold text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-[#10b981]/20 focus:border-[#10b981] focus:outline-none transition-all"
+                          required
+                        />
+                      </div>
+
                       <div>
                         <label className="text-[10px] font-black uppercase tracking-widest text-[#0a2540]/60 mb-2 block">
                           Clinic Name

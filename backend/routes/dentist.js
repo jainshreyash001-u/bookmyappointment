@@ -63,13 +63,14 @@ router.get("/profile", auth, async (req, res) => {
 
 // PATCH /api/dentist/profile
 router.patch("/profile", auth, async (req, res) => {
-    const { clinicName, workingHours, clinicAddress } = req.body;
+    const { name, clinicName, workingHours, clinicAddress } = req.body;
 
     try {
         const dentist = await getDentistById(req.dentist.dentistId);
         if (!dentist) return res.status(404).json({ error: "Dentist not found" });
 
         const fieldsToUpdate = {};
+        if (name !== undefined) fieldsToUpdate.Name = name;
         if (clinicName !== undefined) fieldsToUpdate.ClinicName = clinicName;
         if (workingHours !== undefined) fieldsToUpdate.WorkingHours = JSON.stringify(workingHours);
         if (clinicAddress !== undefined) fieldsToUpdate.ClinicAddress = clinicAddress;
