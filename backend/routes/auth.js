@@ -11,8 +11,8 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
-const { createDentist, getDentistByEmail } = require("../services/airtable");
-const { initializeDentistNamespace } = require("../services/pinecone");
+const { createDentist, getDentistByEmail } = require("../services/database");
+const { initializeDentistNamespace } = require("../services/knowledge");
 const { sendWhatsAppMessage } = require("../services/whatsapp");
 const { createDentistSlackInvite } = require("../services/slack");
 
@@ -34,7 +34,7 @@ router.post("/signup", async (req, res) => {
         // Create dentist ID
         const dentistId = `DT_${uuidv4().substring(0, 8).toUpperCase()}`;
 
-        // Create dentist in Airtable
+        // Create dentist in Database
         const dentist = await createDentist({
             DentistID: dentistId,
             Name: clinicName,
@@ -47,7 +47,7 @@ router.post("/signup", async (req, res) => {
             SlackNotificationMode: slackMode,
         });
 
-        // Initialize Pinecone namespace for this dentist
+        // Initialize knowledge namespace for this dentist
         await initializeDentistNamespace(dentistId);
 
         // Send welcome WhatsApp message
@@ -123,13 +123,13 @@ router.get("/google/callback", async (req, res) => {
 
     try {
         const { getCalendarClient, exchangeCodeForTokens } = require("../services/calendar");
-        const { updateDentist } = require("../services/airtable");
+        const { updateDentist } = require("../services/database");
 
         const dentistId = state;
         const tokens = await exchangeCodeForTokens(code);
 
-        // Store tokens in Airtable
-        const dentist = await require("../services/airtable").getDentistById(dentistId);
+        // Store tokens in Database
+        const dentist = await require("../services/database").getDentistById(dentistId);
         await updateDentist(dentist.id, {
             GoogleCalendarToken: JSON.stringify(tokens),
             GoogleCalendarId: "primary",

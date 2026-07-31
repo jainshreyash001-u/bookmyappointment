@@ -11,7 +11,10 @@ const {
     getPendingReminders,
     markReminderSent,
     getDentistById,
-} = require("../services/airtable");
+    createAppointment,
+    updateAppointment,
+} = require("../services/database");
+const supabase = require("../services/supabaseClient");
 const { sendAppointmentReminder } = require("../services/whatsapp");
 
 function auth(req, res, next) {
@@ -36,11 +39,95 @@ router.get("/", auth, async (req, res) => {
             appointments: appointments.map((a) => ({
                 id: a.id,
                 patientName: a.fields.PatientName,
+                patientPhone: a.fields.PatientPhone,
                 service: a.fields.Service,
                 dateTime: a.fields.DateTime,
+                duration: a.fields.Duration,
                 status: a.fields.Status,
+                notes: a.fields.Notes,
             })),
         });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/appointments
+router.post("/", auth, async (req, res) => {
+    try {
+        const { patientName, patientPhone, service, dateTime, duration, status, notes } = req.body;
+        const appt = await createAppointment(req.dentist.dentistId, {
+            PatientName: patientName,
+            PatientPhone: patientPhone,
+            Service: service,
+            DateTime: dateTime,
+            Duration: duration,
+            Status: status,
+            Notes: notes,
+        });
+
+        res.json({
+            success: true,
+            appointment: {
+                id: appt.id,
+                patientName: appt.fields.PatientName,
+                patientPhone: appt.fields.PatientPhone,
+                service: appt.fields.Service,
+                dateTime: appt.fields.DateTime,
+                duration: appt.fields.Duration,
+                status: appt.fields.Status,
+                notes: appt.fields.Notes,
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PATCH /api/appointments/:id
+router.patch("/:id", auth, async (req, res) => {
+    try {
+        const { patientName, patientPhone, service, dateTime, duration, status, notes } = req.body;
+        const appt = await updateAppointment(req.params.id, {
+            PatientName: patientName,
+            PatientPhone: patientPhone,
+            Service: service,
+            DateTime: dateTime,
+            Duration: duration,
+            Status: status,
+            Notes: notes,
+        });
+
+        res.json({
+            success: true,
+            appointment: {
+                id: appt.id,
+                patientName: appt.fields.PatientName,
+                patientPhone: appt.fields.PatientPhone,
+                service: appt.fields.Service,
+                dateTime: appt.fields.DateTime,
+                duration: appt.fields.Duration,
+                status: appt.fields.Status,
+                notes: appt.fields.Notes,
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE /api/appointments/:id
+router.delete("/:id", auth, async (req, res) => {
+    try {
+        const { error } = await supabase
+            .from("appointments")
+            .delete()
+            .eq("id", req.params.id)
+            .eq("dentist_id", req.dentist.dentistId);
+
+        if (error) throw error;
+
+        res.json({ success: true, message: "Appointment deleted successfully" });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

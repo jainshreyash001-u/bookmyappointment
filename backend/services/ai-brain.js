@@ -1,10 +1,10 @@
 /**
  * services/ai-brain.js
- * Groq LLM + Pinecone RAG - The AI Brain
+ * Groq LLM + Supabase RAG - The AI Brain
  */
 
 const Groq = require("groq-sdk");
-const { queryDentistKnowledge, storeLearnedAnswer } = require("./pinecone");
+const { queryDentistKnowledge, storeLearnedAnswer } = require("./knowledge");
 const { checkCalendarAvailability } = require("./calendar");
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -61,7 +61,7 @@ ${context || "No specific information available"}
 Patient Message: ${message}`;
 
     const completion = await groq.chat.completions.create({
-      model: process.env.GROQ_MODEL || "llama3-70b-8192",
+      model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
       messages: [{ role: "user", content: fullPrompt }],
       temperature: 0.7,
       max_tokens: 500,

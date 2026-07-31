@@ -5,7 +5,7 @@
 
 const express = require("express");
 const router = express.Router();
-const { getDentistByPhone, getDentistByWhatsApp } = require("../services/airtable");
+const { getDentistByPhone, getDentistByWhatsApp } = require("../services/database");
 const { processMessage } = require("../services/ai-brain");
 const { sendWhatsAppMessage } = require("../services/whatsapp");
 
@@ -22,8 +22,8 @@ router.post("/", async (req, res) => {
         const clinicPhone = to.replace("whatsapp:", "");
 
         // Find dentist by their WhatsApp number
-        // (For simplicity, using a mock finder or looking up by number in Airtable)
-        const { getDentistByWhatsAppNumber } = require("../services/airtable");
+        // (For simplicity, using a mock finder or looking up by number in Database)
+        const { getDentistByWhatsAppNumber } = require("../services/database");
         const dentist = await getDentistByWhatsAppNumber(clinicPhone);
 
         if (!dentist) {

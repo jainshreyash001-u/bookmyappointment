@@ -4,7 +4,7 @@
  * Logic for voice call follow-ups and auto-cancellations
  */
 
-const { getUpcomingUnconfirmedAppointments, updateAppointment } = require("./airtable");
+const { getUpcomingUnconfirmedAppointments, updateAppointment } = require("./database");
 const { sendWhatsAppMessage } = require("./whatsapp");
 
 async function checkPendingFollowUpCalls() {

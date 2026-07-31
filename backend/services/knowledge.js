@@ -1,60 +1,59 @@
 /**
- * services/pinecone.js
+ * services/knowledge.js
  * ──────────────────────────────────────────────────
- * Pinecone vector database for RAG (knowledge base)
- * Using 1024 dimensions (llama-text-embed-v2)
+ * Clinic knowledge-base vector search & processing.
+ * Generates embeddings locally using @xenova/transformers (all-MiniLM-L6-v2) - 384 dimensions.
  */
 
-const { Pinecone } = require("@pinecone-database/pinecone");
+const { pipeline } = require("@xenova/transformers");
+const supabase = require("./supabaseClient");
 
-const pinecone = new Pinecone({
-  apiKey: process.env.PINECONE_API_KEY,
-  environment: process.env.PINECONE_ENVIRONMENT || 'us-east-1-aws',
-});
+let extractor = null;
 
-const INDEX_NAME = process.env.PINECONE_INDEX_NAME || "bookmyappointment";
+async function getExtractor() {
+  if (!extractor) {
+    extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2");
+  }
+  return extractor;
+}
 
-// ─── Embed text (1024 dimensions for llama-text-embed-v2) ────────
+// ─── Embed text (384 dimensions for all-MiniLM-L6-v2) ────────
 async function embedText(text) {
   try {
-    // Return 1024 dimension vector
-    // In production, use actual embedding model
-    return Array(1024)
-      .fill(0)
-      .map(() => Math.random());
+    const embedder = await getExtractor();
+    const output = await embedder(text, { pooling: "mean", normalize: true });
+    return Array.from(output.data);
   } catch (err) {
-    console.error("[Embedding]", err.message);
-    return Array(1024)
-      .fill(0)
-      .map(() => Math.random());
+    console.error("[Embedding Error]", err.message);
+    return Array(384).fill(0).map(() => Math.random());
   }
 }
 
 // ─── Upsert knowledge for dentist ──────────────────────────────────
 async function upsertDentistKnowledge(dentistId, documents) {
   try {
-    const index = pinecone.Index(INDEX_NAME);
-    const vectors = [];
-
+    const rows = [];
     for (const doc of documents) {
       const embedding = await embedText(doc.text);
-      vectors.push({
-        id: `${dentistId}_${doc.id}`,
-        values: embedding,
-        metadata: {
-          dentistId,
-          type: doc.type,
-          title: doc.title,
-          text: doc.text,
-        },
+      rows.push({
+        dentist_id: dentistId,
+        type: doc.type || "general",
+        title: doc.title || "",
+        content: doc.text,
+        embedding: embedding,
       });
     }
 
-    await index.upsert(vectors);
-    console.log(`[Pinecone] Upserted ${vectors.length} documents for ${dentistId}`);
-    return { success: true, count: vectors.length };
+    const { error } = await supabase
+      .from("dentist_knowledge")
+      .insert(rows);
+
+    if (error) throw error;
+
+    console.log(`[Supabase RAG] Upserted ${rows.length} documents for ${dentistId}`);
+    return { success: true, count: rows.length };
   } catch (err) {
-    console.error("[Pinecone Upsert]", err.message);
+    console.error("[Supabase RAG Upsert]", err.message);
     return { success: false, error: err.message };
   }
 }
@@ -62,30 +61,27 @@ async function upsertDentistKnowledge(dentistId, documents) {
 // ─── Query knowledge base ──────────────────────────────────────────
 async function queryDentistKnowledge(dentistId, query, topK = 5) {
   try {
-    const index = pinecone.Index(INDEX_NAME);
     const queryEmbedding = await embedText(query);
 
-    const results = await index.query({
-      vector: queryEmbedding,
-      topK,
-      filter: {
-        dentistId: { $eq: dentistId },
-      },
-      includeMetadata: true,
+    const { data, error } = await supabase.rpc("match_knowledge", {
+      query_embedding: queryEmbedding,
+      match_threshold: 0.3,
+      match_count: topK,
+      filter_dentist_id: dentistId,
     });
 
-    const matches = results.matches
-      .filter((m) => m.score > 0.7)
-      .map((m) => ({
-        score: m.score,
-        title: m.metadata.title,
-        text: m.metadata.text,
-        type: m.metadata.type,
-      }));
+    if (error) throw error;
+
+    const matches = (data || []).map((m) => ({
+      score: m.similarity,
+      title: m.title,
+      text: m.content,
+      type: m.type,
+    }));
 
     return matches;
   } catch (err) {
-    console.error("[Pinecone Query]", err.message);
+    console.error("[Supabase RAG Query]", err.message);
     return [];
   }
 }
@@ -132,8 +128,9 @@ async function initializeDentistNamespace(dentistId) {
       },
     ];
 
-    await upsertDentistKnowledge(dentistId, defaultDocs);
-    console.log(`[Pinecone] Initialized namespace for ${dentistId}`);
+    const result = await upsertDentistKnowledge(dentistId, defaultDocs);
+    if (!result.success) throw new Error(result.error);
+    console.log(`[Supabase RAG] Initialized namespace for ${dentistId}`);
     return { success: true };
   } catch (err) {
     console.error("[Initialize Namespace]", err.message);
@@ -144,15 +141,14 @@ async function initializeDentistNamespace(dentistId) {
 // ─── Delete dentist namespace ──────────────────────────────────────
 async function deleteDentistNamespace(dentistId) {
   try {
-    const index = pinecone.Index(INDEX_NAME);
-    await index.deleteMany({
-      deleteRequest: {
-        filter: {
-          dentistId: { $eq: dentistId },
-        },
-      },
-    });
-    console.log(`[Pinecone] Deleted namespace for ${dentistId}`);
+    const { error } = await supabase
+      .from("dentist_knowledge")
+      .delete()
+      .eq("dentist_id", dentistId);
+
+    if (error) throw error;
+
+    console.log(`[Supabase RAG] Deleted namespace for ${dentistId}`);
     return { success: true };
   } catch (err) {
     console.error("[Delete Namespace]", err.message);

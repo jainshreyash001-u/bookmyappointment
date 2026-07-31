@@ -6,8 +6,8 @@
 const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
-const { getPatient, upsertPatient } = require("../services/airtable");
-const Airtable = require("airtable");
+const { getPatient, upsertPatient } = require("../services/database");
+const supabase = require("../services/supabaseClient");
 
 function auth(req, res, next) {
     const token = req.headers.authorization?.replace("Bearer ", "");
@@ -24,26 +24,23 @@ function auth(req, res, next) {
 // GET /api/patient/list
 router.get("/list", auth, async (req, res) => {
     try {
-        const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
-            process.env.AIRTABLE_BASE_ID
-        );
+        const { data, error } = await supabase
+            .from("patients")
+            .select()
+            .eq("dentist_id", req.dentist.dentistId)
+            .order("last_contact", { ascending: false });
 
-        const records = await base(process.env.AIRTABLE_PATIENTS_TABLE || "Patients")
-            .select({
-                filterByFormula: `{DentistID} = '${req.dentist.dentistId}'`,
-                sort: [{ field: "LastContact", direction: "desc" }],
-            })
-            .all();
+        if (error) throw error;
 
         res.json({
-            total: records.length,
-            patients: records.map((r) => ({
+            total: data.length,
+            patients: data.map((r) => ({
                 id: r.id,
-                name: r.fields.Name,
-                phoneNumber: r.fields.PhoneNumber,
-                email: r.fields.Email,
-                lastContact: r.fields.LastContact,
-                createdAt: r.fields.CreatedAt,
+                name: r.name,
+                phoneNumber: r.phone_number,
+                email: r.email,
+                lastContact: r.last_contact,
+                createdAt: r.created_at,
             })),
         });
     } catch (err) {

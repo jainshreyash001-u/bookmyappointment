@@ -6,7 +6,7 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
-const { getDentistById } = require("../services/airtable");
+const { getDentistById } = require("../services/database");
 const { transcribeAudio } = require("../services/ai-brain");
 
 // POST /api/voice/tts (Text to Speech)

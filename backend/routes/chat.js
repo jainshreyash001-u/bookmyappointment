@@ -5,7 +5,7 @@
 
 const express = require("express");
 const router = express.Router();
-const { getDentistById, upsertPatient } = require("../services/airtable");
+const { getDentistById, upsertPatient } = require("../services/database");
 const { processMessage } = require("../services/ai-brain");
 const { sendWhatsAppMessage } = require("../services/whatsapp");
 

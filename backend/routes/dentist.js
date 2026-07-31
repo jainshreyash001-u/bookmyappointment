@@ -10,12 +10,12 @@ const {
     getDentistById,
     updateDentist,
     getAppointmentsByDentist,
-} = require("../services/airtable");
+} = require("../services/database");
 const { getAuthUrl } = require("../services/calendar");
 const {
     upsertDentistKnowledge,
     queryDentistKnowledge,
-} = require("../services/pinecone");
+} = require("../services/knowledge");
 
 // Auth middleware
 function auth(req, res, next) {
