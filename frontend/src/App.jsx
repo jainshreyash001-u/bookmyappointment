@@ -18,6 +18,7 @@ import OnboardingPage from './pages/OnboardingPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminReportsPage from './pages/AdminReportsPage';
+import ChatPage from './pages/ChatPage';
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(true); // Set to true for dev preview
 
@@ -37,6 +38,7 @@ function App() {
 
         {/* Protected Dashboard Routes */}
         <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/chat" element={<ChatPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/queries" element={<QueriesPage />} />
         <Route path="/status" element={<StatusPage />} />

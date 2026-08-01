@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, MessageSquare, Activity, Settings, LogOut, X, Lock, CheckCircle2, AlertCircle, MapPin, Clock, FileText, User } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Activity, Settings, LogOut, X, Lock, CheckCircle2, AlertCircle, MapPin, Clock, FileText, User, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Sidebar = ({ handleLogout }) => {
@@ -41,6 +41,7 @@ const Sidebar = ({ handleLogout }) => {
   const [successMsg, setSuccessMsg] = useState('');
 
   const menuItems = [
+    { name: 'Chat', icon: Bot, path: '/chat' },
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { name: 'Queries', icon: MessageSquare, path: '/queries' },
     { name: 'Status', icon: Activity, path: '/status' }
