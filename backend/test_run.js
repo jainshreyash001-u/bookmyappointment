@@ -93,6 +93,7 @@ async function runTests() {
         Email: `test_${dummyDentistId.toLowerCase()}@example.com`,
         WhatsAppNumber: "+910000000000",
         ClinicName: "Verification Labs Clinic",
+        PasswordHash: "dummy_password_hash_123",
       };
 
       const created = await createDentist(dummyDentist);

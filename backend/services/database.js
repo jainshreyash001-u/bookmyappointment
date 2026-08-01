@@ -192,6 +192,10 @@ async function updateDentist(recordId, fields) {
   if (fields.SlackWebhook !== undefined) dbData.slack_webhook = fields.SlackWebhook;
   if (fields.SlackNotificationMode !== undefined) dbData.slack_notification_mode = fields.SlackNotificationMode;
 
+  if (Object.keys(dbData).length === 0) {
+    return await getDentistById(recordId);
+  }
+
   const { data, error } = await supabase
     .from("dentists")
     .update(dbData)
@@ -426,5 +430,6 @@ module.exports = {
   updateAppointment,
   getUpcomingUnconfirmedAppointments,
   createDentistUser,
+  getDentistUserByEmail,
   getClinicsByOwnerId,
 };
