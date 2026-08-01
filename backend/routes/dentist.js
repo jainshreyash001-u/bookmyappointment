@@ -39,23 +39,16 @@ router.get("/profile", auth, async (req, res) => {
         if (!dentist) return res.status(404).json({ error: "Dentist not found" });
 
         res.json({
-            dentistId: dentist.fields.DentistID,
-            name: dentist.fields.DoctorName || dentist.fields.Name,
-            clinicName: dentist.fields.ClinicName,
-            email: dentist.fields.Email,
-            phoneNumber: dentist.fields.WhatsAppNumber,
-            clinicAddress: dentist.fields.ClinicAddress,
-            workingHours: JSON.parse(dentist.fields.WorkingHours || "{}"),
-            subscriptionStatus: dentist.fields.SubscriptionStatus,
-            slackConfigured: !!dentist.fields.SlackWebhook,
-            calendarConnected: (() => {
-                try {
-                    const tokens = JSON.parse(dentist.fields.GoogleCalendarToken || "{}");
-                    return !!tokens.access_token;
-                } catch {
-                    return false;
-                }
-            })(),
+            dentistId: dentist.dentistId,
+            name: dentist.doctorName || dentist.name,
+            clinicName: dentist.clinicName,
+            email: dentist.email,
+            phoneNumber: dentist.whatsAppNumber,
+            clinicAddress: dentist.clinicAddress,
+            workingHours: dentist.workingHours || {},
+            subscriptionStatus: dentist.subscriptionStatus,
+            slackConfigured: !!dentist.slackWebhook,
+            calendarConnected: !!(dentist.googleCalendarToken && dentist.googleCalendarToken.access_token),
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -71,10 +64,10 @@ router.patch("/profile", auth, async (req, res) => {
         if (!dentist) return res.status(404).json({ error: "Dentist not found" });
 
         const fieldsToUpdate = {};
-        if (name !== undefined) fieldsToUpdate.DoctorName = name;
-        if (clinicName !== undefined) fieldsToUpdate.ClinicName = clinicName;
-        if (workingHours !== undefined) fieldsToUpdate.WorkingHours = JSON.stringify(workingHours);
-        if (clinicAddress !== undefined) fieldsToUpdate.ClinicAddress = clinicAddress;
+        if (name !== undefined) fieldsToUpdate.doctorName = name;
+        if (clinicName !== undefined) fieldsToUpdate.clinicName = clinicName;
+        if (workingHours !== undefined) fieldsToUpdate.workingHours = workingHours;
+        if (clinicAddress !== undefined) fieldsToUpdate.clinicAddress = clinicAddress;
 
         const updated = await updateDentist(dentist.id, fieldsToUpdate);
         res.json({ success: true, dentist: updated });
@@ -91,10 +84,10 @@ router.get("/clinics", auth, async (req, res) => {
         res.json({
             success: true,
             clinics: clinics.map((c) => ({
-                dentistId: c.fields.DentistID,
-                clinicName: c.fields.ClinicName,
-                address: c.fields.ClinicAddress,
-                phoneNumber: c.fields.WhatsAppNumber,
+                dentistId: c.dentistId,
+                clinicName: c.clinicName,
+                address: c.clinicAddress,
+                phoneNumber: c.whatsAppNumber,
             })),
         });
     } catch (err) {
@@ -127,17 +120,17 @@ router.post("/clinics", auth, async (req, res) => {
         const dentistId = `DT_${uuidv4().substring(0, 8).toUpperCase()}`;
 
         await createDentist({
-            DentistID: dentistId,
-            OwnerID: req.dentist.ownerId,
-            Name: clinicName,
-            ClinicName: clinicName,
-            Email: req.dentist.email,
-            WhatsAppNumber: phoneNumber,
-            WorkingHours: JSON.stringify(workingHours || {}),
-            SubscriptionStatus: "trial",
-            TrialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-            SlackNotificationMode: "none",
-            ClinicAddress: address,
+            dentistId: dentistId,
+            ownerId: req.dentist.ownerId,
+            name: clinicName,
+            clinicName: clinicName,
+            email: req.dentist.email,
+            whatsAppNumber: phoneNumber,
+            workingHours: workingHours || {},
+            subscriptionStatus: "trial",
+            trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+            slackNotificationMode: "none",
+            clinicAddress: address,
         });
 
         const { initializeDentistNamespace } = require("../services/knowledge");
@@ -165,14 +158,14 @@ router.get("/appointments", auth, async (req, res) => {
             total: appointments.length,
             appointments: appointments.map((a) => ({
                 id: a.id,
-                patientName: a.fields.PatientName,
-                patientPhone: a.fields.PatientPhone,
-                service: a.fields.Service,
-                dateTime: a.fields.DateTime,
-                duration: a.fields.Duration,
-                status: a.fields.Status,
-                reminderSent: a.fields.ReminderSent,
-                notes: a.fields.Notes,
+                patientName: a.patientName,
+                patientPhone: a.patientPhone,
+                service: a.service,
+                dateTime: a.dateTime,
+                duration: a.duration,
+                status: a.status,
+                reminderSent: a.reminderSent,
+                notes: a.notes,
             })),
         });
     } catch (err) {
@@ -259,8 +252,8 @@ router.get("/upcoming", auth, async (req, res) => {
         const upcoming = appointments
             .filter(
                 (a) =>
-                    new Date(a.fields.DateTime) > new Date() &&
-                    a.fields.Status === "confirmed"
+                    new Date(a.dateTime) > new Date() &&
+                    a.status === "confirmed"
             )
             .slice(0, 10);
 
@@ -276,7 +269,7 @@ router.post("/test-whatsapp", auth, async (req, res) => {
         const dentist = await getDentistById(req.clinicId);
         if (!dentist) return res.status(404).json({ error: "Dentist not found" });
 
-        const phoneNumber = dentist.fields.WhatsAppNumber;
+        const phoneNumber = dentist.whatsAppNumber;
         if (!phoneNumber) {
             return res.status(400).json({ error: "WhatsApp number not configured in profile" });
         }
@@ -304,8 +297,8 @@ router.post("/disconnect-calendar", auth, async (req, res) => {
         if (!dentist) return res.status(404).json({ error: "Dentist not found" });
 
         await updateDentist(dentist.id, {
-            GoogleCalendarToken: "{}",
-            GoogleCalendarId: "",
+            googleCalendarToken: {},
+            googleCalendarId: "",
         });
 
         res.json({ success: true, message: "Google Calendar successfully disconnected." });

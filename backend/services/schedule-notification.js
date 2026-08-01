@@ -17,10 +17,10 @@ async function sendAllScheduleNotifications() {
 
     for (const appt of appointments) {
       try {
-        const phone = appt.fields.PatientPhone;
+        const phone = appt.patientPhone;
         const result = await sendAppointmentReminder(phone, {
-          dateTime: appt.fields.DateTime,
-          service: appt.fields.Service,
+          dateTime: appt.dateTime,
+          service: appt.service,
         });
 
         if (result.success) {

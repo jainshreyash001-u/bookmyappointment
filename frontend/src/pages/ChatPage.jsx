@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Bot, Calendar, Sparkles } from 'lucide-react';
+import { Send, Sparkles, User, ShieldAlert } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 
@@ -33,10 +33,11 @@ const ChatPage = () => {
     }
     setSessionId(sid);
 
+    // Initial greeting for the Dentist
     setMessages([
       {
         role: 'assistant',
-        content: '👋 Hello! I am your AI Dental Assistant. How can I help you today? You can ask about treatments, check pricing, or request to book an appointment.',
+        content: "👩‍⚕️ Welcome Doctor! I am Ressa, your clinic's AI assistant. I'm here to help you manage schedules and patients.\n\nYou can ask me about your upcoming appointments, check guidelines, or instruct me on schedules, e.g.:\n• 'I am on leave tomorrow'\n• 'I will be away next Monday from 10 AM to 2 PM'\n\nIf you tell me you're taking leave, I will sweep your calendar, mark affected appointments as rescheduling, calculate the next available slots, and message patients via WhatsApp automatically.",
         timestamp: new Date()
       }
     ]);
@@ -54,6 +55,7 @@ const ChatPage = () => {
 
     const userMessage = message;
     const dentistId = localStorage.getItem('activeClinicId') || localStorage.getItem('dentistId') || 'DT_DEMO';
+    const token = localStorage.getItem('authToken');
     
     setMessage('');
     setMessages(prev => [...prev, { role: 'user', content: userMessage, timestamp: new Date() }]);
@@ -61,11 +63,20 @@ const ChatPage = () => {
 
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      const response = await fetch(`${API_BASE}/api/chat/${dentistId}`, {
+      const url = `${API_BASE}/api/chat/${dentistId}/admin`;
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+        headers['x-clinic-id'] = dentistId;
+      }
+
+      const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({
           message: userMessage,
           sessionId: sessionId
@@ -89,7 +100,7 @@ const ChatPage = () => {
       console.error('[Chat Error]', err);
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: '⚠️ Sorry, I ran into an error connecting to our system. Please try again in a moment.',
+        content: `⚠️ Sorry Dr., I ran into an error: ${err.message}. Please try again in a moment.`,
         timestamp: new Date()
       }]);
     } finally {
@@ -102,11 +113,13 @@ const ChatPage = () => {
       <Sidebar handleLogout={handleLogout} />
 
       <main className="flex-1 p-8 lg:p-12 overflow-y-auto bg-gray-50/30 flex flex-col h-[calc(100vh-112px)]">
-        <header className="mb-6 shrink-0">
-          <h1 className="text-4xl font-black tracking-tighter uppercase mb-2 text-[#0a2540]">
-            AI Assistant <span className="text-gradient-clinical">Playground</span>
-          </h1>
-          <p className="text-gray-500 font-medium">Test and interact with your autonomous receptionist in real-time.</p>
+        <header className="mb-6 shrink-0 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-black tracking-tighter uppercase mb-2 text-[#0a2540]">
+              AI Assistant <span className="text-gradient-clinical">Playground</span>
+            </h1>
+            <p className="text-gray-500 font-medium">Converse with Ressa, your clinic's scheduling coordinator.</p>
+          </div>
         </header>
 
         <div className="clinical-card flex-1 flex flex-col overflow-hidden bg-white shadow-sm border border-gray-100/80 min-h-0">
@@ -114,14 +127,16 @@ const ChatPage = () => {
           <div className="bg-[#0a2540] p-6 text-white flex items-center justify-between border-b border-gray-800 shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                <Bot className="w-6 h-6 text-[#10b981]" />
+                <ShieldAlert className="w-6 h-6 text-[#10b981]" />
               </div>
               <div>
                 <h4 className="text-sm font-black tracking-wide uppercase flex items-center gap-1.5">
-                  AI Receptionist
+                  Ressa (Clinic Assistant)
                   <Sparkles className="w-3.5 h-3.5 text-[#10b981]" />
                 </h4>
-                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Autonomous 24/7 Coordinator</span>
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                  Dentist Dashboard Chatbot Workspace
+                </span>
               </div>
             </div>
           </div>
@@ -134,21 +149,13 @@ const ChatPage = () => {
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[70%] p-4 rounded-2xl text-sm font-semibold leading-relaxed ${
+                  className={`max-w-[70%] p-4 rounded-2xl text-sm font-semibold leading-relaxed whitespace-pre-line ${
                     msg.role === 'user'
                       ? 'bg-[#0a2540] text-white rounded-tr-none'
                       : 'bg-white border border-gray-200/80 text-gray-700 rounded-tl-none shadow-sm'
                   }`}
                 >
                   {msg.content}
-                  {msg.appointmentData && (
-                    <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2.5 text-[#10b981]">
-                      <Calendar className="w-4 h-4" />
-                      <span className="font-extrabold uppercase text-[10px] tracking-wider">
-                        Ready to Schedule
-                      </span>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
@@ -171,7 +178,7 @@ const ChatPage = () => {
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type a message to test the AI Receptionist..."
+              placeholder="Type instructions (e.g. 'I am on leave tomorrow') or ask questions..."
               className="flex-1 bg-[#f1f5f9] border-0 rounded-2xl px-5 py-4 text-sm font-semibold text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-[#0a2540]/20 focus:outline-none"
             />
             <button

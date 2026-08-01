@@ -7,7 +7,7 @@ const axios = require("axios");
 
 async function sendSlackAlert(dentistData, alertData) {
   try {
-    if (!dentistData.fields.SlackWebhook) {
+    if (!dentistData.slackWebhook) {
       console.log("[Slack] No webhook configured");
       return { success: false, reason: "no_webhook" };
     }
@@ -88,7 +88,7 @@ async function sendSlackAlert(dentistData, alertData) {
       };
     }
 
-    await axios.post(dentistData.fields.SlackWebhook, message);
+    await axios.post(dentistData.slackWebhook, message);
     return { success: true };
   } catch (err) {
     console.error("[Slack Alert]", err.message);

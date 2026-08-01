@@ -3,6 +3,7 @@
  * ──────────────────────────────────────────────────
  * Centralized Supabase database adapter.
  * Contains CRUD functions for Dentists, Patients, and Appointments.
+ * Returns flat camelCase database records directly.
  */
 
 const supabase = require("./supabaseClient");
@@ -31,33 +32,32 @@ async function getDentistUserByEmail(email) {
 }
 
 async function createDentist(data) {
-  // If owner_id is not passed, find or create user profile
-  let ownerId = data.OwnerID;
-  if (!ownerId && data.Email) {
-    const existingUser = await getDentistUserByEmail(data.Email);
+  let ownerId = data.ownerId;
+  if (!ownerId && data.email) {
+    const existingUser = await getDentistUserByEmail(data.email);
     if (existingUser) {
       ownerId = existingUser.id;
     } else {
-      const newUser = await createDentistUser(data.Email, data.PasswordHash, data.Name || data.ClinicName);
+      const newUser = await createDentistUser(data.email, data.passwordHash, data.name || data.clinicName);
       ownerId = newUser.id;
     }
   }
 
   const dbData = {
-    dentist_id: data.DentistID,
+    dentist_id: data.dentistId,
     owner_id: ownerId,
-    name: data.Name,
-    clinic_name: data.ClinicName,
-    email: data.Email,
-    whatsapp_number: data.WhatsAppNumber,
-    working_hours: data.WorkingHours ? (typeof data.WorkingHours === "string" ? JSON.parse(data.WorkingHours) : data.WorkingHours) : {},
-    subscription_status: data.SubscriptionStatus || "trial",
-    trial_ends_at: data.TrialEndsAt,
-    slack_notification_mode: data.SlackNotificationMode || "none",
-    slack_webhook: data.SlackWebhook,
-    google_calendar_token: data.GoogleCalendarToken ? (typeof data.GoogleCalendarToken === "string" ? JSON.parse(data.GoogleCalendarToken) : data.GoogleCalendarToken) : {},
-    google_calendar_id: data.GoogleCalendarId || "primary",
-    clinic_address: data.ClinicAddress,
+    name: data.name,
+    clinic_name: data.clinicName,
+    email: data.email,
+    whatsapp_number: data.whatsappNumber,
+    working_hours: data.workingHours ? (typeof data.workingHours === "string" ? JSON.parse(data.workingHours) : data.workingHours) : {},
+    subscription_status: data.subscriptionStatus || "trial",
+    trial_ends_at: data.trialEndsAt,
+    slack_notification_mode: data.slackNotificationMode || "none",
+    slack_webhook: data.slackWebhook,
+    google_calendar_token: data.googleCalendarToken ? (typeof data.googleCalendarToken === "string" ? JSON.parse(data.googleCalendarToken) : data.googleCalendarToken) : {},
+    google_calendar_id: data.googleCalendarId || "primary",
+    clinic_address: data.clinicAddress,
   };
 
   const { data: inserted, error } = await supabase
@@ -67,7 +67,7 @@ async function createDentist(data) {
     .single();
 
   if (error) throw error;
-  return mapDentistToAirtableFormat(inserted);
+  return mapDentist(inserted);
 }
 
 async function getDentistById(dentistId) {
@@ -80,11 +80,11 @@ async function getDentistById(dentistId) {
   if (error) throw error;
   if (!data) return null;
   
-  const mapped = mapDentistToAirtableFormat(data);
+  const mapped = mapDentist(data);
   if (data.owner) {
-    mapped.fields.PasswordHash = data.owner.password_hash;
-    mapped.fields.DoctorName = data.owner.name;
-    mapped.fields.OwnerID = data.owner.id;
+    mapped.passwordHash = data.owner.password_hash;
+    mapped.doctorName = data.owner.name;
+    mapped.ownerId = data.owner.id;
   }
   return mapped;
 }
@@ -96,7 +96,7 @@ async function getClinicsByOwnerId(ownerId) {
     .eq("owner_id", ownerId);
 
   if (error) throw error;
-  return (data || []).map(mapDentistToAirtableFormat);
+  return (data || []).map(mapDentist);
 }
 
 async function getDentistByEmail(email) {
@@ -122,10 +122,10 @@ async function getDentistByEmail(email) {
     working_hours: {}
   };
 
-  const mapped = mapDentistToAirtableFormat(clinicRow);
-  mapped.fields.PasswordHash = user.password_hash;
-  mapped.fields.DoctorName = user.name;
-  mapped.fields.OwnerID = user.id;
+  const mapped = mapDentist(clinicRow);
+  mapped.passwordHash = user.password_hash;
+  mapped.doctorName = user.name;
+  mapped.ownerId = user.id;
   return mapped;
 }
 
@@ -138,7 +138,7 @@ async function getDentistByWhatsAppNumber(number) {
 
   if (error) throw error;
   if (!data) return null;
-  return mapDentistToAirtableFormat(data);
+  return mapDentist(data);
 }
 
 async function getClinicsByWhatsAppNumber(number) {
@@ -148,12 +148,12 @@ async function getClinicsByWhatsAppNumber(number) {
     .eq("whatsapp_number", number);
 
   if (error) throw error;
-  return (data || []).map(mapDentistToAirtableFormat);
+  return (data || []).map(mapDentist);
 }
 
 async function updateDentist(recordId, fields) {
-  // If PasswordHash or DoctorName is updated, modify the dentist_users table
-  if (fields.PasswordHash !== undefined || fields.DoctorName !== undefined) {
+  // If passwordHash or doctorName is updated, modify the dentist_users table
+  if (fields.passwordHash !== undefined || fields.doctorName !== undefined) {
     const { data: clinic } = await supabase
       .from("dentists")
       .select("owner_id")
@@ -162,8 +162,8 @@ async function updateDentist(recordId, fields) {
       
     if (clinic && clinic.owner_id) {
       const userUpdates = {};
-      if (fields.PasswordHash !== undefined) userUpdates.password_hash = fields.PasswordHash;
-      if (fields.DoctorName !== undefined) userUpdates.name = fields.DoctorName;
+      if (fields.passwordHash !== undefined) userUpdates.password_hash = fields.passwordHash;
+      if (fields.doctorName !== undefined) userUpdates.name = fields.doctorName;
       
       await supabase
         .from("dentist_users")
@@ -173,24 +173,24 @@ async function updateDentist(recordId, fields) {
   }
 
   const dbData = {};
-  if (fields.Name !== undefined) dbData.name = fields.Name;
-  if (fields.ClinicName !== undefined) dbData.clinic_name = fields.ClinicName;
-  if (fields.WorkingHours !== undefined) {
-    dbData.working_hours = typeof fields.WorkingHours === "string" 
-      ? JSON.parse(fields.WorkingHours) 
-      : fields.WorkingHours;
+  if (fields.name !== undefined) dbData.name = fields.name;
+  if (fields.clinicName !== undefined) dbData.clinic_name = fields.clinicName;
+  if (fields.workingHours !== undefined) {
+    dbData.working_hours = typeof fields.workingHours === "string" 
+      ? JSON.parse(fields.workingHours) 
+      : fields.workingHours;
   }
-  if (fields.ClinicAddress !== undefined) dbData.clinic_address = fields.ClinicAddress;
-  if (fields.GoogleCalendarToken !== undefined) {
-    dbData.google_calendar_token = typeof fields.GoogleCalendarToken === "string"
-      ? JSON.parse(fields.GoogleCalendarToken)
-      : fields.GoogleCalendarToken;
+  if (fields.clinicAddress !== undefined) dbData.clinic_address = fields.clinicAddress;
+  if (fields.googleCalendarToken !== undefined) {
+    dbData.google_calendar_token = typeof fields.googleCalendarToken === "string"
+      ? JSON.parse(fields.googleCalendarToken)
+      : fields.googleCalendarToken;
   }
-  if (fields.GoogleCalendarId !== undefined) dbData.google_calendar_id = fields.GoogleCalendarId;
-  if (fields.SubscriptionStatus !== undefined) dbData.subscription_status = fields.SubscriptionStatus;
-  if (fields.TrialEndsAt !== undefined) dbData.trial_ends_at = fields.TrialEndsAt;
-  if (fields.SlackWebhook !== undefined) dbData.slack_webhook = fields.SlackWebhook;
-  if (fields.SlackNotificationMode !== undefined) dbData.slack_notification_mode = fields.SlackNotificationMode;
+  if (fields.googleCalendarId !== undefined) dbData.google_calendar_id = fields.googleCalendarId;
+  if (fields.subscriptionStatus !== undefined) dbData.subscription_status = fields.subscriptionStatus;
+  if (fields.trialEndsAt !== undefined) dbData.trial_ends_at = fields.trialEndsAt;
+  if (fields.slackWebhook !== undefined) dbData.slack_webhook = fields.slackWebhook;
+  if (fields.slackNotificationMode !== undefined) dbData.slack_notification_mode = fields.slackNotificationMode;
 
   if (Object.keys(dbData).length === 0) {
     return await getDentistById(recordId);
@@ -205,53 +205,51 @@ async function updateDentist(recordId, fields) {
 
   if (error) throw error;
   
-  // Inject updated fields
-  const mapped = mapDentistToAirtableFormat(data);
-  if (fields.PasswordHash !== undefined) mapped.fields.PasswordHash = fields.PasswordHash;
-  if (fields.DoctorName !== undefined) mapped.fields.DoctorName = fields.DoctorName;
+  const mapped = mapDentist(data);
+  if (fields.passwordHash !== undefined) mapped.passwordHash = fields.passwordHash;
+  if (fields.doctorName !== undefined) mapped.doctorName = fields.doctorName;
   return mapped;
 }
 
-function mapDentistToAirtableFormat(row) {
+function mapDentist(row) {
+  if (!row) return null;
   return {
     id: row.dentist_id,
-    fields: {
-      DentistID: row.dentist_id,
-      Name: row.name,
-      ClinicName: row.clinic_name,
-      Email: row.email,
-      WhatsAppNumber: row.whatsapp_number,
-      ClinicAddress: row.clinic_address,
-      PasswordHash: null,
-      WorkingHours: JSON.stringify(row.working_hours || {}),
-      SubscriptionStatus: row.subscription_status,
-      TrialEndsAt: row.trial_ends_at,
-      SlackNotificationMode: row.slack_notification_mode,
-      SlackWebhook: row.slack_webhook,
-      GoogleCalendarToken: JSON.stringify(row.google_calendar_token || {}),
-      GoogleCalendarId: row.google_calendar_id,
-    },
+    dentistId: row.dentist_id,
+    name: row.name,
+    clinicName: row.clinic_name,
+    email: row.email,
+    whatsappNumber: row.whatsapp_number,
+    clinicAddress: row.clinic_address,
+    passwordHash: null,
+    workingHours: typeof row.working_hours === "string" ? JSON.parse(row.working_hours) : (row.working_hours || {}),
+    subscriptionStatus: row.subscription_status,
+    trialEndsAt: row.trial_ends_at,
+    slackNotificationMode: row.slack_notification_mode,
+    slackWebhook: row.slack_webhook,
+    googleCalendarToken: typeof row.google_calendar_token === "string" ? JSON.parse(row.google_calendar_token) : (row.google_calendar_token || {}),
+    googleCalendarId: row.google_calendar_id,
   };
 }
 
 // ─── PATIENTS ─────────────────────────────────────────────────
 async function upsertPatient(dentistId, phoneNumber, patientData) {
   let conversationHistory = [];
-  if (patientData.ConversationHistory) {
+  if (patientData.conversationHistory) {
     try {
-      conversationHistory = typeof patientData.ConversationHistory === "string"
-        ? JSON.parse(patientData.ConversationHistory)
-        : patientData.ConversationHistory;
+      conversationHistory = typeof patientData.conversationHistory === "string"
+        ? JSON.parse(patientData.conversationHistory)
+        : patientData.conversationHistory;
     } catch {
-      conversationHistory = [{ role: "user", content: patientData.ConversationHistory }];
+      conversationHistory = [{ role: "user", content: patientData.conversationHistory }];
     }
   }
 
   const dbData = {
     dentist_id: dentistId,
     phone_number: phoneNumber,
-    name: patientData.Name || "Patient",
-    email: patientData.Email || null,
+    name: patientData.name || "Patient",
+    email: patientData.email || null,
     conversation_history: conversationHistory,
     last_contact: new Date().toISOString(),
   };
@@ -263,7 +261,7 @@ async function upsertPatient(dentistId, phoneNumber, patientData) {
     .single();
 
   if (error) throw error;
-  return mapPatientToAirtableFormat(data);
+  return mapPatient(data);
 }
 
 async function getPatient(dentistId, phoneNumber) {
@@ -276,21 +274,20 @@ async function getPatient(dentistId, phoneNumber) {
 
   if (error) throw error;
   if (!data) return null;
-  return mapPatientToAirtableFormat(data);
+  return mapPatient(data);
 }
 
-function mapPatientToAirtableFormat(row) {
+function mapPatient(row) {
+  if (!row) return null;
   return {
     id: row.id,
-    fields: {
-      DentistID: row.dentist_id,
-      PhoneNumber: row.phone_number,
-      Name: row.name,
-      Email: row.email,
-      ConversationHistory: JSON.stringify(row.conversation_history || []),
-      LastContact: row.last_contact,
-      CreatedAt: row.created_at,
-    },
+    dentistId: row.dentist_id,
+    phoneNumber: row.phone_number,
+    name: row.name,
+    email: row.email,
+    conversationHistory: typeof row.conversation_history === "string" ? JSON.parse(row.conversation_history) : (row.conversation_history || []),
+    lastContact: row.last_contact,
+    createdAt: row.created_at,
   };
 }
 
@@ -298,14 +295,14 @@ function mapPatientToAirtableFormat(row) {
 async function createAppointment(dentistId, appointmentData) {
   const dbData = {
     dentist_id: dentistId,
-    patient_name: appointmentData.PatientName,
-    patient_phone: appointmentData.PatientPhone,
-    service: appointmentData.Service,
-    date_time: appointmentData.DateTime,
-    duration: appointmentData.Duration || 60,
-    status: appointmentData.Status || "pending_confirmation",
-    notes: appointmentData.Notes || "",
-    event_id: appointmentData.EventID || null,
+    patient_name: appointmentData.patientName,
+    patient_phone: appointmentData.patientPhone,
+    service: appointmentData.service,
+    date_time: appointmentData.dateTime,
+    duration: appointmentData.duration || 60,
+    status: appointmentData.status || "pending_confirmation",
+    notes: appointmentData.notes || "",
+    event_id: appointmentData.eventId || null,
   };
 
   const { data, error } = await supabase
@@ -315,7 +312,7 @@ async function createAppointment(dentistId, appointmentData) {
     .single();
 
   if (error) throw error;
-  return mapAppointmentToAirtableFormat(data);
+  return mapAppointment(data);
 }
 
 async function getAppointmentsByDentist(dentistId) {
@@ -326,7 +323,7 @@ async function getAppointmentsByDentist(dentistId) {
     .order("date_time", { ascending: true });
 
   if (error) throw error;
-  return (data || []).map(mapAppointmentToAirtableFormat);
+  return (data || []).map(mapAppointment);
 }
 
 async function getPendingReminders() {
@@ -345,7 +342,7 @@ async function getPendingReminders() {
     .lte("date_time", tomorrowEnd.toISOString());
 
   if (error) throw error;
-  return (data || []).map(mapAppointmentToAirtableFormat);
+  return (data || []).map(mapAppointment);
 }
 
 async function markReminderSent(recordId) {
@@ -359,15 +356,15 @@ async function markReminderSent(recordId) {
 
 async function updateAppointment(recordId, fields) {
   const dbData = {};
-  if (fields.Status !== undefined) dbData.status = fields.Status;
-  if (fields.ReminderSent !== undefined) dbData.reminder_sent = fields.ReminderSent;
-  if (fields.Notes !== undefined) dbData.notes = fields.Notes;
-  if (fields.EventID !== undefined) dbData.event_id = fields.EventID;
-  if (fields.DateTime !== undefined) dbData.date_time = fields.DateTime;
-  if (fields.Duration !== undefined) dbData.duration = fields.Duration;
-  if (fields.PatientName !== undefined) dbData.patient_name = fields.PatientName;
-  if (fields.PatientPhone !== undefined) dbData.patient_phone = fields.PatientPhone;
-  if (fields.Service !== undefined) dbData.service = fields.Service;
+  if (fields.status !== undefined) dbData.status = fields.status;
+  if (fields.reminderSent !== undefined) dbData.reminder_sent = fields.reminderSent;
+  if (fields.notes !== undefined) dbData.notes = fields.notes;
+  if (fields.eventId !== undefined) dbData.event_id = fields.eventId;
+  if (fields.dateTime !== undefined) dbData.date_time = fields.dateTime;
+  if (fields.duration !== undefined) dbData.duration = fields.duration;
+  if (fields.patientName !== undefined) dbData.patient_name = fields.patientName;
+  if (fields.patientPhone !== undefined) dbData.patient_phone = fields.patientPhone;
+  if (fields.service !== undefined) dbData.service = fields.service;
 
   const { data, error } = await supabase
     .from("appointments")
@@ -377,7 +374,7 @@ async function updateAppointment(recordId, fields) {
     .single();
 
   if (error) throw error;
-  return mapAppointmentToAirtableFormat(data);
+  return mapAppointment(data);
 }
 
 async function getUpcomingUnconfirmedAppointments() {
@@ -392,25 +389,24 @@ async function getUpcomingUnconfirmedAppointments() {
     .lte("date_time", next24h.toISOString());
 
   if (error) throw error;
-  return (data || []).map(mapAppointmentToAirtableFormat);
+  return (data || []).map(mapAppointment);
 }
 
-function mapAppointmentToAirtableFormat(row) {
+function mapAppointment(row) {
+  if (!row) return null;
   return {
     id: row.id,
-    fields: {
-      DentistID: row.dentist_id,
-      PatientName: row.patient_name,
-      PatientPhone: row.patient_phone,
-      Service: row.service,
-      DateTime: row.date_time,
-      Duration: row.duration,
-      Status: row.status,
-      ReminderSent: row.reminder_sent,
-      Notes: row.notes,
-      EventID: row.event_id,
-      CreatedAt: row.created_at,
-    },
+    dentistId: row.dentist_id,
+    patientName: row.patient_name,
+    patientPhone: row.patient_phone,
+    service: row.service,
+    dateTime: row.date_time,
+    duration: row.duration,
+    status: row.status,
+    reminderSent: row.reminder_sent,
+    notes: row.notes,
+    eventId: row.event_id,
+    createdAt: row.created_at,
   };
 }
 
