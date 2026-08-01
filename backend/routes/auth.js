@@ -84,17 +84,17 @@ router.post("/signup", async (req, res) => {
             const dentistId = `DT_${uuidv4().substring(0, 8).toUpperCase()}`;
             
             const clinic = await createDentist({
-                DentistID: dentistId,
-                OwnerID: user.id,
-                Name: clinicData.clinicName,
-                ClinicName: clinicData.clinicName,
-                Email: normalizedEmail,
-                WhatsAppNumber: clinicData.phoneNumber,
-                WorkingHours: JSON.stringify(clinicData.workingHours || {}),
-                SubscriptionStatus: "trial",
-                TrialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-                SlackNotificationMode: slackMode || "none",
-                ClinicAddress: clinicData.address,
+                dentistId: dentistId,
+                ownerId: user.id,
+                name: clinicData.clinicName,
+                clinicName: clinicData.clinicName,
+                email: normalizedEmail,
+                whatsAppNumber: clinicData.phoneNumber,
+                workingHours: clinicData.workingHours || {},
+                subscriptionStatus: "trial",
+                trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+                slackNotificationMode: slackMode || "none",
+                clinicAddress: clinicData.address,
             });
 
             // Initialize knowledge namespace
@@ -171,7 +171,7 @@ router.post("/login", async (req, res) => {
         }
 
         // Verify password
-        const passwordHash = dentist.fields.PasswordHash;
+        const passwordHash = dentist.passwordHash;
         if (passwordHash) {
             const isMatch = await bcrypt.compare(password, passwordHash);
             if (!isMatch) {
@@ -181,20 +181,20 @@ router.post("/login", async (req, res) => {
             // Auto-setup password for legacy database records
             const newHash = await bcrypt.hash(password, 10);
             await updateDentist(dentist.id, {
-                PasswordHash: newHash
+                passwordHash: newHash
             });
-            console.log(`[Auth] Auto-set password hash for legacy dentist ${dentist.fields.Email}`);
+            console.log(`[Auth] Auto-set password hash for legacy dentist ${dentist.email}`);
         }
 
         const { getClinicsByOwnerId } = require("../services/database");
-        const clinicsList = await getClinicsByOwnerId(dentist.fields.OwnerID);
+        const clinicsList = await getClinicsByOwnerId(dentist.ownerId);
 
         const token = jwt.sign(
             { 
-              dentistId: dentist.fields.DentistID, 
-              email: dentist.fields.Email,
-              clinicName: dentist.fields.ClinicName,
-              ownerId: dentist.fields.OwnerID
+              dentistId: dentist.dentistId, 
+              email: dentist.email,
+              clinicName: dentist.clinicName,
+              ownerId: dentist.ownerId
             },
             process.env.JWT_SECRET,
             { expiresIn: "30d" }
@@ -204,13 +204,13 @@ router.post("/login", async (req, res) => {
             success: true,
             token,
             dentist: {
-                dentistId: dentist.fields.DentistID,
-                email: dentist.fields.Email,
-                clinicName: dentist.fields.ClinicName,
+                dentistId: dentist.dentistId,
+                email: dentist.email,
+                clinicName: dentist.clinicName,
                 clinics: clinicsList.map(c => ({
-                    dentistId: c.fields.DentistID,
-                    clinicName: c.fields.ClinicName,
-                    address: c.fields.ClinicAddress
+                    dentistId: c.dentistId,
+                    clinicName: c.clinicName,
+                    address: c.clinicAddress
                 }))
             },
         });
@@ -332,7 +332,7 @@ router.post("/verify-otp", async (req, res) => {
         
         // Update in database
         await updateDentist(dentist.id, {
-            PasswordHash: passwordHash,
+            passwordHash: passwordHash,
         });
 
         // Clean up OTP store
@@ -372,7 +372,7 @@ router.post("/change-password", auth, async (req, res) => {
         if (!dentist) return res.status(404).json({ error: "Dentist not found" });
 
         // Get stored hash
-        const passwordHash = dentist.fields.PasswordHash;
+        const passwordHash = dentist.passwordHash;
         if (!passwordHash) {
             return res.status(400).json({ error: "Please log out and use Forgot Password to initialize your password first." });
         }
@@ -388,7 +388,7 @@ router.post("/change-password", auth, async (req, res) => {
 
         // Update database
         await updateDentist(dentist.id, {
-            PasswordHash: newHash,
+            passwordHash: newHash,
         });
 
         res.json({ success: true, message: "Password updated successfully" });
