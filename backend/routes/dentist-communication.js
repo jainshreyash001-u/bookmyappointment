@@ -174,7 +174,7 @@ router.get("/vacations", auth, async (req, res) => {
     const dentist = await getDentistById(req.dentist.dentistId);
     if (!dentist) return res.status(404).json({ error: "Dentist not found" });
 
-    const vacations = JSON.parse(dentist.fields.Vacations || "[]");
+    const vacations = typeof dentist.vacations === "string" ? JSON.parse(dentist.vacations) : (dentist.vacations || []);
     res.json({ vacations });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -188,7 +188,7 @@ router.get("/policies", auth, async (req, res) => {
     const dentist = await getDentistById(req.dentist.dentistId);
     if (!dentist) return res.status(404).json({ error: "Dentist not found" });
 
-    const notes = dentist.fields.PoliciesNotes || "";
+    const notes = dentist.policiesNotes || "";
     const policies = notes
       .split("\n")
       .filter((line) => line.trim())

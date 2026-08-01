@@ -60,12 +60,12 @@ router.get("/:phone", auth, async (req, res) => {
         }
 
         res.json({
-            name: patient.fields.Name,
-            phoneNumber: patient.fields.PhoneNumber,
-            email: patient.fields.Email,
-            conversationHistory: patient.fields.ConversationHistory || "",
-            lastContact: patient.fields.LastContact,
-            createdAt: patient.fields.CreatedAt,
+            name: patient.name,
+            phoneNumber: patient.phoneNumber,
+            email: patient.email,
+            conversationHistory: patient.conversationHistory || "",
+            lastContact: patient.lastContact,
+            createdAt: patient.createdAt,
         });
     } catch (err) {
         res.status(500).json({ error: err.message });

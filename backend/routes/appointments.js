@@ -36,13 +36,13 @@ router.get("/", auth, async (req, res) => {
             total: appointments.length,
             appointments: appointments.map((a) => ({
                 id: a.id,
-                patientName: a.fields.PatientName,
-                patientPhone: a.fields.PatientPhone,
-                service: a.fields.Service,
-                dateTime: a.fields.DateTime,
-                duration: a.fields.Duration,
-                status: a.fields.Status,
-                notes: a.fields.Notes,
+                patientName: a.patientName,
+                patientPhone: a.patientPhone,
+                service: a.service,
+                dateTime: a.dateTime,
+                duration: a.duration,
+                status: a.status,
+                notes: a.notes,
             })),
         });
     } catch (err) {
@@ -58,7 +58,7 @@ router.post("/", auth, async (req, res) => {
         let eventId = null;
         try {
             const dentist = await getDentistById(req.clinicId);
-            const tokens = JSON.parse(dentist.fields.GoogleCalendarToken || "{}");
+            const tokens = dentist.googleCalendarToken || {};
             if (tokens.access_token) {
                 const calResult = await bookAppointment(tokens, {
                     patientName,
@@ -77,27 +77,27 @@ router.post("/", auth, async (req, res) => {
         }
 
         const appt = await createAppointment(req.clinicId, {
-            PatientName: patientName,
-            PatientPhone: patientPhone,
-            Service: service,
-            DateTime: dateTime,
-            Duration: duration,
-            Status: status,
-            Notes: notes,
-            EventID: eventId,
+            patientName: patientName,
+            patientPhone: patientPhone,
+            service: service,
+            dateTime: dateTime,
+            duration: duration,
+            status: status,
+            notes: notes,
+            eventId: eventId,
         });
 
         res.json({
             success: true,
             appointment: {
                 id: appt.id,
-                patientName: appt.fields.PatientName,
-                patientPhone: appt.fields.PatientPhone,
-                service: appt.fields.Service,
-                dateTime: appt.fields.DateTime,
-                duration: appt.fields.Duration,
-                status: appt.fields.Status,
-                notes: appt.fields.Notes,
+                patientName: appt.patientName,
+                patientPhone: appt.patientPhone,
+                service: appt.service,
+                dateTime: appt.dateTime,
+                duration: appt.duration,
+                status: appt.status,
+                notes: appt.notes,
             }
         });
     } catch (err) {
@@ -121,7 +121,7 @@ router.patch("/:id", auth, async (req, res) => {
         if (existingAppt && existingAppt.event_id) {
             try {
                 const dentist = await getDentistById(req.clinicId);
-                const tokens = JSON.parse(dentist.fields.GoogleCalendarToken || "{}");
+                const tokens = dentist.googleCalendarToken || {};
                 if (tokens.access_token) {
                     await updateCalendarEvent(tokens, existingAppt.event_id, {
                         patientName: patientName || existingAppt.patient_name,
@@ -138,26 +138,26 @@ router.patch("/:id", auth, async (req, res) => {
         }
 
         const appt = await updateAppointment(req.params.id, {
-            PatientName: patientName,
-            PatientPhone: patientPhone,
-            Service: service,
-            DateTime: dateTime,
-            Duration: duration,
-            Status: status,
-            Notes: notes,
+            patientName: patientName,
+            patientPhone: patientPhone,
+            service: service,
+            dateTime: dateTime,
+            duration: duration,
+            status: status,
+            notes: notes,
         });
 
         res.json({
             success: true,
             appointment: {
                 id: appt.id,
-                patientName: appt.fields.PatientName,
-                patientPhone: appt.fields.PatientPhone,
-                service: appt.fields.Service,
-                dateTime: appt.fields.DateTime,
-                duration: appt.fields.Duration,
-                status: appt.fields.Status,
-                notes: appt.fields.Notes,
+                patientName: appt.patientName,
+                patientPhone: appt.patientPhone,
+                service: appt.service,
+                dateTime: appt.dateTime,
+                duration: appt.duration,
+                status: appt.status,
+                notes: appt.notes,
             }
         });
     } catch (err) {
@@ -179,7 +179,7 @@ router.delete("/:id", auth, async (req, res) => {
         if (existingAppt && existingAppt.event_id) {
             try {
                 const dentist = await getDentistById(req.clinicId);
-                const tokens = JSON.parse(dentist.fields.GoogleCalendarToken || "{}");
+                const tokens = dentist.googleCalendarToken || {};
                 if (tokens.access_token) {
                     await deleteAppointment(tokens, existingAppt.event_id);
                 }
@@ -217,13 +217,13 @@ router.post("/send-reminders", async (req, res) => {
         let failed = 0;
 
         for (const reminder of pendingReminders) {
-            const dentist = await getDentistById(reminder.fields.DentistID);
+            const dentist = await getDentistById(reminder.dentistId);
 
             const result = await sendAppointmentReminder(
-                reminder.fields.PatientPhone,
+                reminder.patientPhone,
                 {
-                    service: reminder.fields.Service,
-                    dateTime: reminder.fields.DateTime,
+                    service: reminder.service,
+                    dateTime: reminder.dateTime,
                 }
             );
 
